@@ -245,3 +245,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - Updated the `app` and `worker` Compose commands to `touch .env` before any Symfony console command. `touch` preserves a user's existing `.env` and creates only an empty ignored file when absent; all Compose environment values remain explicit. The test created a harmless empty, ignored `.env` in the local workspace.
 - `docker compose config --quiet` — pass. `docker compose run --rm --no-deps app sh -lc 'touch .env && php bin/console about >/dev/null'` — pass with the workspace bind mount. The full clean GitHub startup path, migrations, and tests remain to be verified by CI.
 - **Next action:** commit/push this Compose fix and rerun GitHub CI through all steps.
+
+### CI validation process termination — 2026-11-15
+
+- CI run `43667618690` passed both Gitleaks scans, Compose config, clean image build and application initialization. The `docker compose exec -T app composer validate --no-check-publish` process was then killed with exit code 137; tests/lint/migration/assets were skipped.
+- Hypothesis: runner memory/resource pressure while app, worker, SearXNG, Redis and database containers run together. The exit code shows the process was killed, but the GitHub logs do not identify the killer; this cause is not confirmed.
+- Added a CI step after app initialization to stop `worker`, `searxng`, and `redis` (not needed by the test suite; database and app remain running) and report `docker stats --no-stream` before validation. This is limited to the ephemeral CI stack; local Compose behavior is unchanged.
+- **Next action:** commit/push this workflow adjustment and monitor CI. If exit 137 persists, use the new container stats output to identify the constrained service/process before tuning.

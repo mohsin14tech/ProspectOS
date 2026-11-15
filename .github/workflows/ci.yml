@@ -41,6 +41,11 @@ jobs:
           docker compose logs app database searxng
           exit 1
 
+      - name: Stop services not needed for validation
+        run: |
+          docker compose stop worker searxng redis
+          docker stats --no-stream
+
       - name: Validate Composer metadata
         run: docker compose exec -T app composer validate --no-check-publish
 
