@@ -272,3 +272,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - CI run `43668867335` passed source/history secret scans, Composer validation, clean image build and PostgreSQL health. The one-off app migration command applied all 9 migrations. The following demo seeder failed during Symfony container setup because `DEFAULT_URI` was not configured in a clean Compose environment.
 - Added non-secret `DEFAULT_URI=http://localhost` to `.env.example` and the app/worker Compose environment so clean local and CI startup don't rely on an ignored developer `.env` file.
 - **Next action:** validate Compose/workflow syntax, run targeted local startup checks, commit/push, and rerun CI to verify migrations, tests, lint and assets.
+
+### CI test database setup — 2026-11-15
+
+- GitHub Actions run `43669131897` passed source/history secret scans, Compose and Composer validation, clean image build, PostgreSQL readiness, and dev migrations plus demo seed. PHPUnit then failed because the test environment appends `_test` to `DATABASE_URL`, but clean PostgreSQL contained only the `app` database (`app_test` did not exist). All 17 database-backed functional cases errored for this same setup issue; the remaining steps were skipped.
+- Added a CI step to create `app_test` and apply migrations with `APP_ENV=test` before running PHPUnit. This is isolated from the dev database and does not seed synthetic data into the test database.
+- Local checks: `docker compose config --quiet` — pass; `docker compose run --rm --no-deps -e APP_ENV=test app sh -lc 'touch .env && php bin/console doctrine:migrations:migrate --no-interaction'` — pass (already at migration `Version20261114160000`); `docker compose run --rm --no-deps app sh -lc 'touch .env && composer test'` — pass, 47 tests / 248 assertions; `git diff --check` — pass with expected LF-to-CRLF notice. The local `app_test` database already existed, so clean creation is only exercised by the next hosted CI run.
+- **Next action:** scan the exact release tree for secrets, commit and push the workflow plus handoff update, then monitor CI through all checks.

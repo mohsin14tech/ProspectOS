@@ -49,6 +49,11 @@ jobs:
       - name: Prepare database schema and demo fixtures
         run: docker compose run --rm --no-deps app sh -lc 'touch .env && php bin/console doctrine:migrations:migrate --no-interaction && php bin/console app:demo:seed'
 
+      - name: Prepare isolated test database
+        run: |
+          docker compose exec -T database createdb -U app app_test
+          docker compose run --rm --no-deps -e APP_ENV=test app sh -lc 'touch .env && php bin/console doctrine:migrations:migrate --no-interaction'
+
       - name: Run test suite
         run: docker compose run --rm --no-deps app sh -lc 'touch .env && composer test'
 
