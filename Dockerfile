@@ -8,13 +8,15 @@ RUN apt-get update \
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 WORKDIR /app
+ENV APP_ENV=prod
 
 COPY composer.json composer.lock ./
 RUN composer install --prefer-dist --no-interaction --no-progress --no-scripts
 
 COPY . .
-RUN composer dump-autoload --classmap-authoritative --no-scripts \
-    && php -d memory_limit=512M bin/console tailwind:build --minify
+RUN touch .env \
+    && composer dump-autoload --classmap-authoritative --no-scripts \
+    && APP_SECRET=build-only php -d memory_limit=512M bin/console tailwind:build --minify
 
 EXPOSE 8000
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
