@@ -328,3 +328,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - Local verification: `docker compose config --quiet` — pass; `platform app:config-validate` — pass; `docker compose run --rm --no-deps app sh -lc 'touch .env && composer test'` — pass, 47 tests / 248 assertions; exact staged-tree Gitleaks scan — 1.42 MB, zero findings; `git diff --check` — pass with expected Windows line-ending notice.
 - GitHub Actions run [43672342866](https://github.com/mohsin14tech/ProspectOS/actions/runs/43672342866) completed successfully in 2m09s: both secret scans, Compose/Composer validation, clean image build, PostgreSQL readiness, all 9 dev/test migrations, demo seed, Messenger setup, 47 tests / 248 assertions, container/Twig lint, Doctrine schema/migration checks and production Tailwind build all passed.
 - **Next action:** wait for Upsun account verification through request `#553971`. The visible browser is on that open support ticket. Once activated, create the project from the public GitHub repo, review plan/resource terms before any provisioning, and validate a real hosted build before exposing a URL.
+
+### ProspectOS temporary artifacts moved to D: — 2026-11-15
+
+- The repository already resides at `D:\ProspectOS`; Docker Desktop's WSL data disk is already at `D:\Docker\DockerDesktopWSL`. The user asked to move all work to D:.
+- Found 13 ProspectOS-related scan directories under `C:\Users\Mohsin\AppData\Local\Temp`, totaling about 21 MB. Moved them to `D:\Temp\Mohsin`. Set the current Windows user's persistent `TEMP` and `TMP` variables to `D:\Temp\Mohsin`; verified both user values and all 13 moved directories.
+- The already-running Codex process still reports its inherited `TEMP`/`TMP` as the old C: path; restart Codex (or the user session) for all child processes to inherit the new user settings. C: now has about 0.05 GB free; D: about 16.53 GB free. No Docker volumes or caches were deleted or moved during this step.
+- **Next action:** after restarting Codex, verify its process temp path is `D:\Temp\Mohsin`. Continue Upsun onboarding when support request `#553971` is answered.
