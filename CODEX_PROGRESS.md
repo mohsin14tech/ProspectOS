@@ -266,3 +266,9 @@ Append a new dated entry after each substantial implementation phase and at the 
 - Reworked `.github/workflows/ci.yml` to build the app image without starting it, start only PostgreSQL, wait for `pg_isready`, initialize schema/demo data in an app one-off container, then run tests, lint, schema/migration checks and production Tailwind in short-lived app containers with `--no-deps`. This avoids keeping worker, SearXNG, Redis, or the app server alive during tests.
 - Locally verified the same one-off execution pattern: `docker compose run --rm --no-deps app composer test` — pass, 47 tests / 248 assertions; `lint:container` plus Twig lint — pass (13 templates); schema validation/migration status — pass (9 executed / 0 pending); production Tailwind build — pass. Compose config — pass. Local persistent database migration/seed was not rerun for this workflow change.
 - **Next action:** commit/push the CI isolation change and monitor the next GitHub run through every step.
+
+### CI database setup environment fix — 2026-11-15
+
+- CI run `43668867335` passed source/history secret scans, Composer validation, clean image build and PostgreSQL health. The one-off app migration command applied all 9 migrations. The following demo seeder failed during Symfony container setup because `DEFAULT_URI` was not configured in a clean Compose environment.
+- Added non-secret `DEFAULT_URI=http://localhost` to `.env.example` and the app/worker Compose environment so clean local and CI startup don't rely on an ignored developer `.env` file.
+- **Next action:** validate Compose/workflow syntax, run targeted local startup checks, commit/push, and rerun CI to verify migrations, tests, lint and assets.

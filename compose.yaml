@@ -14,6 +14,7 @@ services:
       - "8000:8000"
     environment:
       APP_ENV: dev
+      DEFAULT_URI: http://localhost
       APP_SECRET: local-demo-secret-change-before-deployment
       DATABASE_URL: postgresql://app:app@database:5432/app?serverVersion=16&charset=utf8
       MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
@@ -36,6 +37,7 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: dev
+      DEFAULT_URI: http://localhost
       APP_SECRET: local-demo-secret-change-before-deployment
       DATABASE_URL: postgresql://app:app@database:5432/app?serverVersion=16&charset=utf8
       MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
