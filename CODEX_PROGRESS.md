@@ -252,3 +252,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - Hypothesis: runner memory/resource pressure while app, worker, SearXNG, Redis and database containers run together. The exit code shows the process was killed, but the GitHub logs do not identify the killer; this cause is not confirmed.
 - Added a CI step after app initialization to stop `worker`, `searxng`, and `redis` (not needed by the test suite; database and app remain running) and report `docker stats --no-stream` before validation. This is limited to the ephemeral CI stack; local Compose behavior is unchanged.
 - **Next action:** commit/push this workflow adjustment and monitor CI. If exit 137 persists, use the new container stats output to identify the constrained service/process before tuning.
+
+### CI service-stop regression and Composer check relocation — 2026-11-15
+
+- CI run `43667995184` passed secret scans, Compose validation, image build and application initialization. After the workflow stopped worker/SearXNG/Redis, `docker compose exec` could not reach the app because its container was restarting; `docker stats` showed only PostgreSQL remained running. The service-stop workaround was removed.
+- Moved Composer metadata validation before Compose startup and into a short-lived `composer:2` container: `docker run --rm -v "$PWD:/app" -w /app composer:2 composer validate --no-check-publish`. This isolates the low-memory check from the running app and its dependencies.
+- Local verification: `docker compose config --quiet` — pass; exact Composer container validation — pass (`composer.json is valid`). No Compose service was stopped or restarted during this check.
+- **Next action:** commit/push the workflow ordering change and rerun CI; app startup and service state should remain intact during subsequent validation.

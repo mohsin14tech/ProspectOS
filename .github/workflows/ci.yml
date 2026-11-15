@@ -27,6 +27,9 @@ jobs:
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
+      - name: Validate Composer metadata
+        run: docker run --rm -v "$PWD:/app" -w /app composer:2 composer validate --no-check-publish
+
       - name: Build and start application stack
         run: docker compose up --build --detach
 
@@ -40,14 +43,6 @@ jobs:
           done
           docker compose logs app database searxng
           exit 1
-
-      - name: Stop services not needed for validation
-        run: |
-          docker compose stop worker searxng redis
-          docker stats --no-stream
-
-      - name: Validate Composer metadata
-        run: docker compose exec -T app composer validate --no-check-publish
 
       - name: Run test suite
         run: docker compose exec -T app composer test
