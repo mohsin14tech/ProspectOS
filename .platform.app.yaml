@@ -1,0 +1,68 @@
+name: app
+type: php:8.4
+disk: 1024
+
+build:
+  flavor: none
+
+dependencies:
+  php:
+    composer/composer: '^2'
+
+runtime:
+  extensions:
+    - intl
+    - pdo_pgsql
+
+relationships:
+  database:
+    service: db
+    endpoint: postgresql
+
+mounts:
+  '/var':
+    source: local
+    source_path: var
+
+variables:
+  env:
+    APP_ENV: prod
+    APP_DEBUG: '0'
+    MESSENGER_TRANSPORT_DSN: 'doctrine://default?auto_setup=0'
+    SEARCH_PROVIDER: demo
+    AI_PROVIDER: disabled
+    SYMFONY_TRUSTED_PROXIES: REMOTE_ADDR
+    SYMFONY_TRUSTED_HEADERS: 'x-forwarded-for,x-forwarded-proto,x-forwarded-port,x-forwarded-prefix'
+
+hooks:
+  build: |
+    set -eu
+    cp .env.example .env
+    export APP_ENV=prod
+    export APP_SECRET=build-only
+    composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader --classmap-authoritative
+    php bin/console tailwind:build --minify --env=prod
+    : > .env
+  deploy: |
+    set -eu
+    . ./.environment
+    php bin/console doctrine:migrations:migrate --no-interaction
+    php bin/console messenger:setup-transports
+    php bin/console cache:clear --env=prod
+
+web:
+  locations:
+    '/':
+      root: public
+      passthru: /index.php
+      index:
+        - index.php
+    '/mcp':
+      root: public
+      scripts: false
+      allow: false
+
+workers:
+  messenger:
+    commands:
+      start: php bin/console messenger:consume async --time-limit=3600 --memory-limit=256M

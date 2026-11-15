@@ -1,0 +1,17 @@
+if [ -n "${PLATFORM_PROJECT_ENTROPY:-}" ]; then
+  export APP_SECRET="${APP_SECRET:-$PLATFORM_PROJECT_ENTROPY}"
+fi
+
+if [ -n "${PLATFORM_RELATIONSHIPS:-}" ]; then
+  database_url=$(php -r '$data = json_decode(base64_decode(getenv("PLATFORM_RELATIONSHIPS")), true); echo $data["database"][0]["url"] ?? "";')
+  if [ -n "$database_url" ]; then
+    export DATABASE_URL="$database_url"
+  fi
+fi
+
+if [ -n "${PLATFORM_ROUTES:-}" ]; then
+  default_uri=$(php -r '$routes = json_decode(base64_decode(getenv("PLATFORM_ROUTES")), true); foreach ($routes as $url => $route) { if (!empty($route["primary"])) { echo rtrim($url, "/"); break; } }')
+  if [ -n "$default_uri" ]; then
+    export DEFAULT_URI="$default_uri"
+  fi
+fi
