@@ -259,3 +259,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - Moved Composer metadata validation before Compose startup and into a short-lived `composer:2` container: `docker run --rm -v "$PWD:/app" -w /app composer:2 composer validate --no-check-publish`. This isolates the low-memory check from the running app and its dependencies.
 - Local verification: `docker compose config --quiet` — pass; exact Composer container validation — pass (`composer.json is valid`). No Compose service was stopped or restarted during this check.
 - **Next action:** commit/push the workflow ordering change and rerun CI; app startup and service state should remain intact during subsequent validation.
+
+### Isolated ephemeral-container CI strategy — 2026-11-15
+
+- CI run `43668358779` passed secrets, Composer metadata, clean image build and app initialization, then the full Compose app-container test suite was killed with exit 137. This reinforces a runner resource/process-isolation issue; the specific cause is still not proven.
+- Reworked `.github/workflows/ci.yml` to build the app image without starting it, start only PostgreSQL, wait for `pg_isready`, initialize schema/demo data in an app one-off container, then run tests, lint, schema/migration checks and production Tailwind in short-lived app containers with `--no-deps`. This avoids keeping worker, SearXNG, Redis, or the app server alive during tests.
+- Locally verified the same one-off execution pattern: `docker compose run --rm --no-deps app composer test` — pass, 47 tests / 248 assertions; `lint:container` plus Twig lint — pass (13 templates); schema validation/migration status — pass (9 executed / 0 pending); production Tailwind build — pass. Compose config — pass. Local persistent database migration/seed was not rerun for this workflow change.
+- **Next action:** commit/push the CI isolation change and monitor the next GitHub run through every step.
