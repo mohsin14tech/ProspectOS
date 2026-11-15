@@ -231,3 +231,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - `docker compose --progress plain build app` — pass. Composer installed all 149 locked packages in ~72 seconds; production autoload build and minified Tailwind v4.1.11 completed; Docker image exported successfully. Tailwind's ~120 MB binary downloaded in ~94 seconds. No existing service containers or database volumes were modified.
 - `docker run --rm -e APP_SECRET=build-only -e DATABASE_URL=... -e MESSENGER_TRANSPORT_DSN=... prospectos-app php bin/console about` — pass; Symfony 7.4.23, PHP 8.4.27, environment `prod`, debug off. It emitted an existing Doctrine ORM proxy autoloader deprecation notice, not a failure.
 - **Next action:** commit/push this fix and rerun the GitHub Actions workflow; verify the clean checkout build, all tests, lint and migration steps complete.
+
+### Clean image environment completion — 2026-11-15
+
+- GitHub Actions run `43666530746` passed both secret scans and Compose config, then failed at the Tailwind command because `DATABASE_URL` was not present after creating an empty `.env`.
+- Tested `cp .env.example .env` inside a disposable prod image: `php bin/console tailwind:build --minify` passed using only checked-in placeholder values. Updated `Dockerfile` to copy `.env.example` temporarily for autoload/asset compilation, use a build-only `APP_SECRET`, then truncate `.env` to empty in the same image layer. This preserves the required Dotenv file path in runtime without embedding development values/secrets.
+- `docker compose --progress plain build app` — pass with this final environment approach; Tailwind v4.1.11 minified. `docker run --rm --entrypoint sh ... prospectos-app ... 'test -f .env && test ! -s .env && php bin/console about'` — pass; clean prod image reports Symfony 7.4.23/PHP 8.4.27 with empty `.env` and supplied runtime values. `docker compose config --quiet` — pass. `docker compose exec -T app composer test` — pass, 47 tests / 248 assertions.
+- **Next action:** commit and push the final Dockerfile fix, rerun GitHub CI, and address any further failures until green.

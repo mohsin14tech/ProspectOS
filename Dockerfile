@@ -14,9 +14,10 @@ COPY composer.json composer.lock ./
 RUN composer install --prefer-dist --no-interaction --no-progress --no-scripts
 
 COPY . .
-RUN touch .env \
+RUN cp .env.example .env \
     && composer dump-autoload --classmap-authoritative --no-scripts \
-    && APP_SECRET=build-only php -d memory_limit=512M bin/console tailwind:build --minify
+    && APP_SECRET=build-only php -d memory_limit=512M bin/console tailwind:build --minify \
+    && : > .env
 
 EXPOSE 8000
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
