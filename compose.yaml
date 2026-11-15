@@ -1,0 +1,92 @@
+services:
+  app:
+    build: .
+    init: true
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      searxng:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: dev
+      APP_SECRET: local-demo-secret-change-before-deployment
+      DATABASE_URL: postgresql://app:app@database:5432/app?serverVersion=16&charset=utf8
+      MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
+      SEARXNG_BASE_URL: http://searxng:8080
+      SEARCH_PROVIDER: searxng
+    command: ["sh", "-c", "php bin/console doctrine:migrations:migrate --no-interaction && php bin/console app:demo:seed && exec php -S 0.0.0.0:8000 -t public"]
+    volumes:
+      - .:/app
+      - composer_vendor:/app/vendor
+      - app_var:/app/var
+
+  worker:
+    build: .
+    init: true
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+    environment:
+      APP_ENV: dev
+      APP_SECRET: local-demo-secret-change-before-deployment
+      DATABASE_URL: postgresql://app:app@database:5432/app?serverVersion=16&charset=utf8
+      MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
+      SEARXNG_BASE_URL: http://searxng:8080
+    volumes:
+      - .:/app
+      - composer_vendor:/app/vendor
+      - app_var:/app/var
+    command: ["sh", "-c", "php bin/console messenger:setup-transports && php bin/console messenger:consume async --time-limit=3600 --memory-limit=256M"]
+
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis_data:/data
+
+  searxng:
+    image: ghcr.io/searxng/searxng:2026.11.11-248b8ffc0@sha256:46de7f6d2dcc11f11cc801f2e1234a519e29ea7deb31d8ae5efdd03a46566722
+    restart: unless-stopped
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-local-prospectos-search-secret-change-before-deployment}
+      SEARXNG_BIND_ADDRESS: 0.0.0.0
+      SEARXNG_PORT: 8080
+      SEARXNG_LIMITER: "false"
+      SEARXNG_PUBLIC_INSTANCE: "false"
+    volumes:
+      - ./docker/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  composer_vendor:
+  app_var:
+  postgres_data:
+  redis_data:

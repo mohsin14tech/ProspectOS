@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Research workspace{% endblock %}
+{% block breadcrumb %}Research{% endblock %}
+{% block body %}
+<div class="page-heading research-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Research workspace</div><h1>Find your next business opportunity.</h1><p class="page-subtitle">Search the web, inspect a public page, or use synthetic sample records.</p></div></div>
+{% for message in app.flashes('success') %}<div class="flash flash-success" role="status"><span>✓</span>{{ message }}</div>{% endfor %}
+{% for message in app.flashes('error') %}<div class="flash flash-error" role="alert"><span>!</span>{{ message }}</div>{% endfor %}
+<div class="research-layout">
+    <section class="panel objective-panel" aria-labelledby="objective-title">
+        <div class="panel-heading"><div><h2 id="objective-title">Who are you looking for?</h2><p>Write what you would tell a researcher on your team.</p></div><span class="step-tag">Step 1 of 3</span></div>
+        <form method="post" action="{{ path('app_research') }}" class="objective-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('research_objective') }}">
+            <label for="objective">Research objective <span>Required</span></label>
+            <textarea id="objective" name="objective" rows="5" minlength="12" maxlength="500" required placeholder="Example: Find independent restaurants in Islamabad that could benefit from online ordering. Look for a missing or outdated website and prepare evidence-backed opportunities.">{{ lastObjective ?? '' }}</textarea>
+            <div class="field-meta"><span>Be specific about location, business type and opportunity.</span><span>12–500 characters</span></div>
+            <fieldset class="source-options">
+                <legend>Choose a research source</legend>
+                <label class="source-option" for="source-web">
+                    <input id="source-web" type="radio" name="source" value="web_search" {{ defaultSearchProvider == 'searxng' ? 'checked' : '' }}>
+                    <span><strong>Search the web</strong><small>Find up to five public web results through your private SearXNG service. Candidates are not verified businesses.</small></span>
+                </label>
+                <label class="source-option" for="source-demo">
+                    <input id="source-demo" type="radio" name="source" value="demo" {{ defaultSearchProvider == 'demo' ? 'checked' : '' }}>
+                    <span><strong>Use sample records</strong><small>Run the saved workflow with fictional examples. No external search runs.</small></span>
+                </label>
+                <p class="privacy-note">Search terms are sent to upstream search engines by the search service. Avoid entering personal or confidential information.</p>
+            </fieldset>
+            <label for="website_url">Public website URL <span>Optional</span></label>
+            <input id="website_url" name="website_url" type="url" maxlength="2048" value="{{ lastWebsiteUrl ?? '' }}" placeholder="https://example.com" autocomplete="url">
+            <div class="field-meta"><span>Checks robots.txt first. Only inspect sites whose terms permit automated access; destinations are rechecked.</span><span>HTTP/HTTPS only</span></div>
+            <div class="form-divider"></div>
+            <div class="research-settings"><div><strong>Inspect one page</strong><p>If supplied, the URL is inspected instead of running the selected search source.</p></div><span class="source-state"><span class="status-pip"></span>Optional</span></div>
+            <div class="research-settings"><div><strong>External actions</strong><p>Nothing is sent without your approval.</p></div><span class="lock-mark">⌑</span></div>
+            <button type="submit" class="button button-primary submit-objective">Start research <span aria-hidden="true">→</span></button>
+        </form>
+    </section>
+    <aside class="research-aside">
+        <section class="side-info"><span class="info-icon" aria-hidden="true">⌕</span><h2>Review every source</h2><p>Web results are saved with their links and search snippets. Open each source to review what was actually found.</p><ul><li><span>1</span>Search public pages</li><li><span>2</span>Save source evidence</li><li><span>3</span>Review candidates</li></ul></section>
+        <div class="demo-explainer"><span class="demo-badge">Search limits</span><p>This local search service depends on its upstream engines. Results may be incomplete or rate limited. Use the sample source when you need an offline workflow demo.</p></div>
+    </aside>
+</div>
+<section class="panel research-runs" aria-labelledby="runs-title">
+    <div class="panel-heading"><div><h2 id="runs-title">Recent research runs</h2><p>Saved in this demo workspace</p></div></div>
+    {% if runs is empty %}<p class="empty-note">No runs yet. Start one above to create the first persisted results.</p>{% else %}
+        <ol class="research-run-list">
+        {% for run in runs %}
+            <li class="research-run-row">
+                <div><strong>{{ run.objective }}</strong><p>{{ run.createdAt|date('d M Y, H:i') }} · {{ run.sourceMode|replace({'_': ' '})|title }} · {{ run.stage|replace({'_': ' '})|title }}</p></div>
+                <span class="status-tag status-{{ run.status }}">{{ run.status|capitalize }}</span>
+                {% if run.status == 'completed' %}<span class="run-count">{{ run.resultCount }} {{ run.sourceMode == 'website_inspection' ? 'page inspected' : (run.sourceMode == 'web_search' ? 'web candidates' : 'sample records') }}</span>{% endif %}
+                {% if run.safeError %}<p class="flash-error">{{ run.safeError }}</p>{% endif %}
+            </li>
+        {% endfor %}
+        </ol>
+    {% endif %}
+</section>
+{% if latestResults is not empty %}
+<section class="panel research-results" aria-labelledby="results-title">
+    <div class="panel-heading"><div><h2 id="results-title">Latest run results</h2><p>{{ runs[0].sourceMode == 'website_inspection' ? 'One public page inspected · observed metadata only · no business verification' : (runs[0].sourceMode == 'web_search' ? 'Web search candidates · source links and snippets · fit not verified' : 'Fictional examples · synthetic signals · no real websites checked') }}</p></div></div>
+    <div class="prospect-list">
+    {% for result in latestResults %}
+        <article class="prospect-row">
+            <div class="company-avatar avatar-{{ loop.index }}">{{ result.prospect.name|slice(0, 1) }}</div>
+            <div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: result.prospect.id}) }}">{{ result.prospect.name }}</a></h3>{% if result.score and result.score.score is not null %}<span class="score score-{{ loop.index }}">{{ result.score.score }}</span>{% elseif result.prospect.sourceMode == 'web_search' %}<span class="score score-unrated">Not scored</span>{% endif %}</div>
+                <p>{{ result.prospect.category }} · {{ result.prospect.location }}</p>
+                {% if result.evidence %}<div class="signal">{{ result.evidence.claim }}</div><small>{% if result.evidence.sourceUrl %}<a href="{{ result.evidence.sourceUrl }}" target="_blank" rel="noopener noreferrer">{{ result.evidence.sourceTitle }}</a>{% else %}{{ result.evidence.sourceTitle }}{% endif %} · {{ result.evidence.retrievedAt|date('d M Y, H:i') }} · {{ result.evidence.verificationState }}</small>{% endif %}
+            </div>
+        </article>
+    {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

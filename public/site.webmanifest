@@ -1,0 +1,12 @@
+{
+  "name": "ProspectOS",
+  "short_name": "ProspectOS",
+  "description": "AI business development and prospect intelligence",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e9f3ff",
+  "theme_color": "#e9f3ff",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

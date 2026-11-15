@@ -1,0 +1,18 @@
+mcp:
+    servers:
+        prospectos:
+            name: 'ProspectOS'
+            transports:
+                stdio: true
+                http: false
+            registry:
+                tools: ['App\Mcp\DemoWorkspaceSummaryTool']
+        workspace:
+            name: 'ProspectOS Workspace'
+            transports:
+                stdio: false
+                http: true
+            http:
+                path: /mcp/workspace
+            registry:
+                tools: ['App\Mcp\Workspace\']

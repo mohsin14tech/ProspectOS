@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Integrations{% endblock %}
+{% block breadcrumb %}Integrations{% endblock %}
+
+{% block body %}
+    <div class="page-heading">
+        <div>
+            <div class="eyebrow">Workspace setup</div>
+            <h1>Integrations</h1>
+            <p class="page-subtitle">Check what is configured and test a real service operation.</p>
+        </div>
+    </div>
+
+    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+
+    <section class="integration-list" aria-label="Connected services">
+        <article class="panel integration-card">
+            <div class="integration-symbol" aria-hidden="true">⌕</div>
+            <div class="integration-copy">
+                <div class="integration-title"><h2>Web search</h2><span class="connection-status is-configured">Configured locally</span></div>
+                <p>SearXNG runs in the local Docker network. It combines public search engines and does not need an API key. Upstream engines can rate limit or omit results.</p>
+                <p class="integration-meta">Search API: <code>{{ searchEndpoint }}</code></p>
+                <form method="post" action="{{ path('app_integrations') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('test_search') }}">
+                    <button class="button button-secondary" type="submit">Test web search</button>
+                </form>
+                <p class="integration-disclosure">Test sends a sample query to upstream search engines. Research objectives are also forwarded by SearXNG. Do not search for confidential or personal information.</p>
+            </div>
+        </article>
+
+        <article class="panel integration-card">
+            <div class="integration-symbol integration-symbol-ai" aria-hidden="true">✳</div>
+            <div class="integration-copy">
+                <div class="integration-title"><h2>AI research</h2><span class="connection-status {{ aiConfigured ? 'is-pending' : 'is-missing' }}">{{ aiConfigured ? 'Configured · test required' : (aiEnabled ? 'Selected provider not configured' : 'AI disabled') }}</span></div>
+                {% if aiConfigured %}<p>{{ aiProvider }} · {{ aiTier }}.</p>{% elseif aiEnabled %}<p>{{ aiProvider }} is selected, but its endpoint/model or credentials are incomplete. AI analysis stays unavailable until configuration passes validation.</p>{% else %}<p>AI is off. Choose a provider explicitly in the ignored local environment to enable analysis.</p>{% endif %}
+                <p class="integration-meta">Configured model: <code>{{ aiModel }}</code></p>
+                {% if aiConfigured %}
+                    <form method="post" action="{{ path('app_integrations') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('test_search') }}">
+                        <input type="hidden" name="test" value="ai">
+                        <button class="button button-secondary" type="submit">Test AI provider</button>
+                    </form>
+                    <p class="integration-disclosure">{{ aiDisclosure }}</p>
+                {% else %}
+                    <p class="integration-meta">Available providers: <code>ollama</code>, <code>gemini</code>, <code>huggingface</code> or <code>openai-compatible</code>. Set <code>AI_PROVIDER=disabled</code> to keep AI off.</p>
+                {% endif %}
+            </div>
+        </article>
+
+        <article class="panel integration-card">
+            <div class="integration-symbol integration-symbol-mail" aria-hidden="true">✉</div>
+            <div class="integration-copy">
+                <div class="integration-title"><h2>Email</h2><span class="connection-status is-missing">{{ mailConfigured|default(false) ? 'Configured · not tested' : 'Mailbox key required' }}</span></div>
+                <p>MailOS inbox sync reads up to 25 recent message headers and thread state. Bodies and attachments stay in MailOS. Sending is not enabled in ProspectOS.</p>
+                <p class="integration-meta"><a href="{{ path('app_inbox') }}">Open inbox setup</a>. MailOS needs a separate read-only API scope before ProspectOS can connect safely.</p>
+            </div>
+        </article>
+    </section>
+{% endblock %}

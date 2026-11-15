@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/icons.html.twig' as icons %}
+
+{% block title %}Command centre{% endblock %}
+{% block body %}
+<div class="page-heading">
+    <div><div class="eyebrow">{{ 'now'|date('l, d F Y') }}</div><h1>Your workspace, in focus.</h1><p class="page-subtitle">Review saved research and choose what to investigate next.</p></div>
+</div>
+
+<section class="hero-panel" aria-labelledby="research-title">
+    <div class="hero-copy">
+        <span class="hero-kicker">Start with a source</span>
+        <h2 id="research-title">Find the next business worth understanding.</h2>
+        <p>Search public results or inspect a site. Review each source before treating a candidate as a fit.</p>
+        <a class="button button-primary hero-action" href="{{ path('app_research') }}">Start research {{ icons.icon('arrow-up-right', 18) }}</a>
+    </div>
+    <div class="hero-side" aria-label="Local web search details">
+        <div class="hero-side-icon">{{ icons.icon('globe', 22) }}</div>
+        <strong>Local search service</strong>
+        <p>Search uses SearXNG. Upstream engines may limit or omit results.</p>
+        <a href="{{ path('app_integrations') }}">See search setup and limits</a>
+    </div>
+</section>
+
+<section class="summary-section" aria-labelledby="overview-title">
+    <div class="section-heading"><div><h2 id="overview-title">Workspace overview</h2><p>Saved records and research activity</p></div><span class="freshness">{{ 'now'|date('H:i') }} · Local time</span></div>
+    <div class="summary-grid">
+        <article class="summary-card"><div class="summary-label"><span>Saved candidates</span><span class="metric-icon blue">{{ icons.icon('building', 18) }}</span></div><div class="summary-value">{{ summary.researched }}</div><div class="metric-foot">Across {{ locations is empty ? 'no saved locations yet' : locations|join(' and ') }}</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Scores at 70 or higher</span><span class="metric-icon green">{{ icons.icon('arrow-up-right', 18) }}</span></div><div class="summary-value">{{ summary.qualified }}</div><div class="metric-foot">A score is a review aid, not a verified outcome</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Outreach drafts</span><span class="metric-icon amber">{{ icons.icon('mail', 18) }}</span></div><div class="summary-value">{{ summary.drafts }}</div><div class="metric-foot">Drafting is not available yet</div></article>
+    </div>
+</section>
+
+<div class="content-grid">
+    <section class="panel prospects-panel" id="prospects" aria-labelledby="prospects-title">
+        <div class="panel-heading"><div><h2 id="prospects-title">Latest candidates</h2><p>Recently updated records in this workspace</p></div><a class="text-link" href="{{ path('app_research') }}">Open research</a></div>
+        <div class="prospect-list">
+        {% if prospects is empty %}<div class="empty-state"><span class="empty-state-icon">{{ icons.icon('search', 24) }}</span><h3>No candidates saved yet</h3><p>Start a web search to bring source-linked candidates into this workspace.</p><a class="button button-primary" href="{{ path('app_research') }}">Start a business search</a></div>{% endif %}
+        {% for prospect in prospects %}
+            <article class="prospect-row">
+                <div class="company-avatar avatar-{{ loop.index }}" aria-hidden="true">{{ prospect.initials }}</div>
+                <div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: prospect.id}) }}">{{ prospect.name }}</a></h3>{% if prospect.score is not null %}<span class="score score-{{ loop.index }}">{{ prospect.score }}</span>{% else %}<span class="score score-unrated">Not scored</span>{% endif %}</div><p>{{ prospect.category }} · {{ prospect.location }}</p><div class="signal">{{ prospect.signal }}</div></div>
+                <span class="row-time">{{ prospect.updated }}</span>
+            </article>
+        {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel activity-panel" id="activity" aria-labelledby="activity-title">
+        <div class="panel-heading"><div><h2 id="activity-title">Recent activity</h2><p>What happened in your workspace</p></div></div>
+        <ol class="activity-list">
+        {% for item in activity %}
+            <li class="activity-item"><span class="timeline-mark mark-{{ item.kind }}" aria-hidden="true">{{ item.kind == 'research' ? '⌕' : (item.kind == 'draft' ? '✉' : '↗') }}</span><div><strong>{{ item.title }}</strong><p>{{ item.detail }}</p><time>{{ item.time }}</time></div></li>
+        {% endfor %}
+        </ol>
+        <div class="activity-note">Research runs and source evidence are saved in this workspace.</div>
+    </section>
+</div>
+
+<section class="integration-strip" id="integrations"><div class="integration-icon">{{ icons.icon('plug', 20) }}</div><div><strong>See which services are ready</strong><p>Search is available locally. AI, email, and social providers still need setup.</p></div><a class="button button-secondary" href="{{ path('app_integrations') }}">Open integrations</a></section>
+{% endblock %}

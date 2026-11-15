@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% block title %}Workspace settings{% endblock %}
+{% block breadcrumb %}Workspace settings{% endblock %}
+{% block body %}
+    <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Workspace access</div><h1>{{ workspace.name }}</h1><p class="page-subtitle">You are signed in as {{ app.user.email }} with the owner membership.</p></div></div>
+    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+    <section class="panel"><div class="panel-heading"><div><h2>Workspace membership</h2><p>Every application workspace request is scoped through your membership.</p></div></div><p>Additional members and invitations are not available yet.</p></section>
+    <section class="panel"><div class="panel-heading"><div><h2>Google sign-in</h2><p>Link a Google identity to this ProspectOS account after password confirmation.</p></div></div>
+        {% if googleIdentity %}
+            <p>Google sign-in is linked to this account. Google identity details are not used to merge other accounts.</p>
+        {% elseif googleConfigured %}
+            <form method="post" action="{{ path('app_google_identity_link') }}" class="auth-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('link_google_identity') }}">
+                <label for="confirm-password">Confirm your ProspectOS password</label>
+                <input id="confirm-password" type="password" name="password" autocomplete="current-password" required>
+                <button class="button button-secondary" type="submit">Continue to Google</button>
+            </form>
+        {% else %}
+            <p>Google sign-in is not configured for this environment.</p>
+        {% endif %}
+    </section>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'auth_base.html.twig' %}
+{% block title %}Initial workspace setup{% endblock %}
+{% block auth_content %}
+    <div class="auth-mark" aria-hidden="true">P</div>
+    <p class="eyebrow">First-run setup</p>
+    <h1>Create your workspace.</h1>
+    <p class="page-subtitle">This one-time form creates the first owner account. It requires the private setup token configured by the operator. Public registration closes after setup.</p>
+    {% for error in errors %}<div class="flash flash-error" role="alert">{{ error }}</div>{% endfor %}
+    <form method="post" action="{{ path('app_setup') }}" class="auth-form">
+        <input type="hidden" name="_token" value="{{ csrf_token('first_owner_setup') }}">
+        <label for="owner_token">One-time setup token</label>
+        <input id="owner_token" type="password" name="owner_token" autocomplete="one-time-code" required>
+        <label for="workspace_name">Workspace name</label>
+        <input id="workspace_name" name="workspace_name" value="{{ workspaceName }}" minlength="2" maxlength="120" autocomplete="organization" required>
+        <label for="email">Owner email</label>
+        <input id="email" type="email" name="email" value="{{ email }}" maxlength="180" autocomplete="email" required>
+        <label for="password">Password <span>12–200 characters</span></label>
+        <input id="password" type="password" name="password" minlength="12" maxlength="200" autocomplete="new-password" required>
+        <button type="submit" class="button button-primary">Create owner workspace <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="auth-footnote"><a href="{{ path('app_login') }}">Back to sign in</a></p>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inbox{% endblock %}
+{% block breadcrumb %}Inbox{% endblock %}
+
+{% block body %}
+    <div class="page-heading inbox-heading">
+        <div>
+            <div class="eyebrow">MailOS mailbox</div>
+            <h1>Inbox</h1>
+            <p class="page-subtitle">A private, workspace-scoped view of recent message headers and thread state.</p>
+        </div>
+        {% if mailConfigured %}
+            <form method="post" action="{{ path('app_inbox_sync') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('mailos_inbox_sync') }}">
+                <button class="button button-primary" type="submit">Sync inbox</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+
+    {% if not mailConfigured %}
+        <section class="panel inbox-state" aria-labelledby="mail-setup-title">
+            <span class="inbox-state-mark" aria-hidden="true">M</span>
+            <div>
+                <h2 id="mail-setup-title">Connect a MailOS mailbox</h2>
+                <p>Inbox sync is off until a read-only MailOS API key and one permitted mailbox are configured. ProspectOS requests message headers and thread state only; it does not fetch bodies or attachments.</p>
+                <p class="integration-meta">MailOS currently uses its <code>jmap</code> scope for both reading and submission. ProspectOS will not enable that broader key for sync. A separate read-only MailOS scope is needed before connecting; only then configure <code>MAILOS_API_KEY</code>, <code>MAILOS_MAILBOX_ID</code>, and <code>MAILOS_READ_ONLY_SCOPE_CONFIRMED=true</code>.</p>
+            </div>
+        </section>
+    {% elseif messages is empty %}
+        <section class="panel inbox-state" aria-labelledby="inbox-empty-title">
+            <span class="inbox-state-mark" aria-hidden="true">M</span>
+            <div>
+                <h2 id="inbox-empty-title">No messages synced yet</h2>
+                <p>Sync up to 25 recent inbox message headers. Message bodies and attachments stay in MailOS.</p>
+            </div>
+        </section>
+    {% else %}
+        <section class="panel inbox-list-panel" aria-labelledby="inbox-list-title">
+            <div class="panel-heading"><div><h2 id="inbox-list-title">Recent messages</h2><p>Up to 25 message headers from the selected MailOS inbox.</p></div><span class="evidence-count">{{ messages|length }} saved</span></div>
+            <ul class="inbox-list">
+                {% for item in messages %}
+                    <li>
+                        <a class="inbox-row {{ item.read ? '' : 'is-unread' }}" href="{{ path('app_inbox_thread', {id: item.id}) }}">
+                            <span class="inbox-unread-mark" aria-hidden="true"></span>
+                            <span class="inbox-row-main">
+                                <span class="inbox-row-top"><strong>{{ item.fromAddress }}</strong><time datetime="{{ item.receivedAt|date('c') }}">{{ item.receivedAt|date('M j, Y · H:i') }}</time></span>
+                                <span class="inbox-subject">{{ item.subject }}</span>
+                                <span class="inbox-row-meta">{{ item.threadCount }} {{ item.threadCount == 1 ? 'message' : 'messages' }} in thread{% if item.toAddress %} · To {{ item.toAddress }}{% endif %}</span>
+                            </span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+{% endblock %}

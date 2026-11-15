@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#e9f3ff">
+    <title>{% block title %}Account{% endblock %} · ProspectOS</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('icons/icon.svg') }}">
+    <script>
+        (() => {
+            let theme = null;
+            try { theme = localStorage.getItem('prospectos-theme'); } catch {}
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = theme;
+            document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#111827' : '#e9f3ff';
+        })();
+    </script>
+    {{ importmap('app') }}
+</head>
+<body class="auth-page">
+    <button class="theme-toggle auth-theme-toggle" type="button" data-theme-toggle aria-pressed="false">Use dark theme</button>
+    <main class="auth-card" aria-labelledby="auth-title">
+        <div id="auth-title">{% block auth_content %}{% endblock %}</div>
+    </main>
+</body>
+</html>

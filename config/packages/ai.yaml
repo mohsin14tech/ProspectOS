@@ -1,0 +1,11 @@
+ai:
+    # see https://symfony.com/doc/current/ai/components/platform.html
+    platform:
+        huggingface:
+            api_key: '%env(HF_TOKEN)%'
+
+    # see https://symfony.com/doc/current/ai/bundles/ai-bundle.html
+    agent:
+
+    # see https://symfony.com/doc/current/ai/components/store.html
+    store:

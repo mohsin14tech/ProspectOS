@@ -1,0 +1,25 @@
+{% extends 'auth_base.html.twig' %}
+{% block title %}Sign in{% endblock %}
+{% block auth_content %}
+    <div class="auth-mark" aria-hidden="true">P</div>
+    <p class="eyebrow">ProspectOS · 14 Technologies</p>
+    <h1>Welcome back.</h1>
+    <p class="page-subtitle">Sign in to your workspace.</p>
+    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+    {% if error %}<div class="flash flash-error" role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</div>{% endif %}
+    {% if googleSignInConfigured %}
+        <a class="button button-secondary google-signin" href="{{ path('app_google_signin_start') }}">Continue with Google</a>
+    {% else %}
+        <p class="auth-footnote">Google sign-in is not configured yet. Email and password sign-in remain available.</p>
+    {% endif %}
+    <form method="post" action="{{ path('app_login') }}" class="auth-form">
+        <label for="username">Email address</label>
+        <input id="username" type="email" name="_username" value="{{ lastUsername }}" autocomplete="username" required autofocus>
+        <label for="password">Password</label>
+        <input id="password" type="password" name="_password" autocomplete="current-password" required>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+        <button type="submit" class="button button-primary">Sign in <span aria-hidden="true">→</span></button>
+    </form>
+    {% if not hasUsers and ownerSetupAvailable %}<p class="auth-footnote">First time here? <a href="{{ path('app_setup') }}">Set up the first owner workspace</a>.</p>{% elseif not hasUsers %}<p class="auth-footnote">Owner setup is disabled. The operator must configure the one-time setup token before creating the first account.</p>{% endif %}
+{% endblock %}

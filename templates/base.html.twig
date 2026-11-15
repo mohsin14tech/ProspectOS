@@ -1,0 +1,69 @@
+<!doctype html>
+{% import 'macros/icons.html.twig' as icons %}
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#f5f8fc">
+        <meta name="description" content="ProspectOS helps you find and understand your next business opportunity.">
+        <link rel="icon" type="image/svg+xml" href="{{ asset('icons/icon.svg') }}">
+        <script>
+            (() => {
+                let theme = null;
+                try { theme = localStorage.getItem('prospectos-theme'); } catch {}
+                if (theme !== 'light' && theme !== 'dark') {
+                    theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.dataset.theme = theme;
+                document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#111827' : '#e9f3ff';
+            })();
+        </script>
+        <title>{% block title %}ProspectOS{% endblock %} · 14 Technologies</title>
+        <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+        {{ importmap('app') }}
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}{% endblock %}
+    </head>
+    <body>
+        <a class="skip-link" href="#main-content">Skip to main content</a>
+        <div class="app-shell">
+            <aside class="sidebar" aria-label="Main navigation">
+                <a class="brand" href="{{ path('app_dashboard') }}" aria-label="ProspectOS home">
+                    <span class="brand-mark" aria-hidden="true">P</span>
+                    <span><strong>ProspectOS</strong><small>by 14 Technologies</small></span>
+                </a>
+                <a class="workspace-switcher" href="{{ path('app_workspace') }}"><span class="workspace-dot" aria-hidden="true"></span><span>Workspace settings</span>{{ icons.icon('chevron-down', 16, 'chevron-icon') }}</a>
+                <nav class="primary-nav">
+                    <span class="nav-caption">Workspace</span>
+                    <a class="nav-link {{ app.request.attributes.get('_route') == 'app_dashboard' ? 'is-active' : '' }}" href="{{ path('app_dashboard') }}">{{ icons.icon('grid', 19, 'nav-icon') }}Command centre</a>
+                    <a class="nav-link {{ app.request.attributes.get('_route') == 'app_research' ? 'is-active' : '' }}" href="{{ path('app_research') }}">{{ icons.icon('search', 19, 'nav-icon') }}Research</a>
+                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_inbox' ? 'is-active' : '' }}" href="{{ path('app_inbox') }}">{{ icons.icon('mail', 19, 'nav-icon') }}Inbox</a>
+                    <a class="nav-link" href="{{ path('app_dashboard') }}#prospects">{{ icons.icon('building', 19, 'nav-icon') }}Prospects</a>
+                    <a class="nav-link {{ app.request.attributes.get('_route') == 'app_integrations' ? 'is-active' : '' }}" href="{{ path('app_integrations') }}">{{ icons.icon('plug', 19, 'nav-icon') }}Integrations</a>
+                    <a class="nav-link" href="{{ path('app_dashboard') }}#activity">{{ icons.icon('activity', 19, 'nav-icon') }}Activity</a>
+                </nav>
+                <div class="sidebar-bottom">
+                    <a class="profile-link" href="{{ path('app_workspace') }}"><span class="profile-avatar">{{ app.user.email|slice(0, 1)|upper }}</span><span><strong>{{ app.user.email }}</strong><small>Workspace access</small></span></a>
+                    <form method="post" action="{{ path('_logout_main') }}" class="logout-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}"><button type="submit">Sign out</button></form>
+                </div>
+            </aside>
+
+            <div class="main-column">
+                <header class="topbar">
+                    <div class="breadcrumbs"><span>Workspace</span><span class="crumb-separator">/</span><strong>{% block breadcrumb %}Command centre{% endblock %}</strong></div>
+                    <div class="topbar-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">Use dark theme</button><span class="demo-pill">{{ workspace.name|default('Workspace') }}</span><span class="topbar-avatar" aria-label="Signed-in account">{{ app.user.email|slice(0, 1)|upper }}</span></div>
+                </header>
+                <main id="main-content" class="page-content">
+                    {% block body %}{% endblock %}
+                </main>
+            </div>
+        </div>
+        <nav class="mobile-nav" aria-label="Mobile navigation">
+            <a class="{{ app.request.attributes.get('_route') == 'app_dashboard' ? 'is-active' : '' }}" href="{{ path('app_dashboard') }}">{{ icons.icon('grid', 20) }}Home</a>
+            <a class="{{ app.request.attributes.get('_route') == 'app_research' ? 'is-active' : '' }}" href="{{ path('app_research') }}">{{ icons.icon('search', 20) }}Research</a>
+            <a class="{{ app.request.attributes.get('_route') starts with 'app_inbox' ? 'is-active' : '' }}" href="{{ path('app_inbox') }}">{{ icons.icon('mail', 20) }}Inbox</a>
+            <a class="{{ app.request.attributes.get('_route') == 'app_integrations' ? 'is-active' : '' }}" href="{{ path('app_integrations') }}">{{ icons.icon('plug', 20) }}Connect</a>
+            <a class="{{ app.request.attributes.get('_route') == 'app_workspace' ? 'is-active' : '' }}" href="{{ path('app_workspace') }}">{{ icons.icon('building', 20) }}Workspace</a>
+        </nav>
+    </body>
+</html>
