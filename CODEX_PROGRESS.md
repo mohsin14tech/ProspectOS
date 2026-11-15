@@ -238,3 +238,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - Tested `cp .env.example .env` inside a disposable prod image: `php bin/console tailwind:build --minify` passed using only checked-in placeholder values. Updated `Dockerfile` to copy `.env.example` temporarily for autoload/asset compilation, use a build-only `APP_SECRET`, then truncate `.env` to empty in the same image layer. This preserves the required Dotenv file path in runtime without embedding development values/secrets.
 - `docker compose --progress plain build app` — pass with this final environment approach; Tailwind v4.1.11 minified. `docker run --rm --entrypoint sh ... prospectos-app ... 'test -f .env && test ! -s .env && php bin/console about'` — pass; clean prod image reports Symfony 7.4.23/PHP 8.4.27 with empty `.env` and supplied runtime values. `docker compose config --quiet` — pass. `docker compose exec -T app composer test` — pass, 47 tests / 248 assertions.
 - **Next action:** commit and push the final Dockerfile fix, rerun GitHub CI, and address any further failures until green.
+
+### Compose bind-mount environment fix — 2026-11-15
+
+- GitHub Actions run `43667053789` passed both Gitleaks scans, Compose config, and the full image build. App initialization then failed because the Compose bind mount `.:/app` hid the empty `.env` created in the image. Symfony Dotenv again raised `PathException` at `/app/.env` before migrations.
+- Updated the `app` and `worker` Compose commands to `touch .env` before any Symfony console command. `touch` preserves a user's existing `.env` and creates only an empty ignored file when absent; all Compose environment values remain explicit. The test created a harmless empty, ignored `.env` in the local workspace.
+- `docker compose config --quiet` — pass. `docker compose run --rm --no-deps app sh -lc 'touch .env && php bin/console about >/dev/null'` — pass with the workspace bind mount. The full clean GitHub startup path, migrations, and tests remain to be verified by CI.
+- **Next action:** commit/push this Compose fix and rerun GitHub CI through all steps.

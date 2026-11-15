@@ -19,7 +19,7 @@ services:
       MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
       SEARXNG_BASE_URL: http://searxng:8080
       SEARCH_PROVIDER: searxng
-    command: ["sh", "-c", "php bin/console doctrine:migrations:migrate --no-interaction && php bin/console app:demo:seed && exec php -S 0.0.0.0:8000 -t public"]
+    command: ["sh", "-c", "touch .env && php bin/console doctrine:migrations:migrate --no-interaction && php bin/console app:demo:seed && exec php -S 0.0.0.0:8000 -t public"]
     volumes:
       - .:/app
       - composer_vendor:/app/vendor
@@ -44,7 +44,7 @@ services:
       - .:/app
       - composer_vendor:/app/vendor
       - app_var:/app/var
-    command: ["sh", "-c", "php bin/console messenger:setup-transports && php bin/console messenger:consume async --time-limit=3600 --memory-limit=256M"]
+    command: ["sh", "-c", "touch .env && php bin/console messenger:setup-transports && php bin/console messenger:consume async --time-limit=3600 --memory-limit=256M"]
 
   database:
     image: postgres:16-alpine
