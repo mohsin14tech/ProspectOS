@@ -286,3 +286,10 @@ Append a new dated entry after each substantial implementation phase and at the 
 - Reproduced the issue against a new local disposable database `app_ci_probe_20261115`: after all 9 migrations, `doctrine:schema:validate` failed, and `doctrine:schema:update --dump-sql` identified only `messenger_messages` and its index as missing. Running `messenger:setup-transports` then made schema validation pass and migration status report 9 executed / 0 new.
 - Updated `.github/workflows/ci.yml` to run `messenger:setup-transports` after dev migrations and before seeding/validation. Local disposable database verification passed. The local `app_ci_probe_20261115` was left intact; no existing data or volumes were removed.
 - **Next action:** run Compose validation and the local relevant checks, scan the exact staged tree for secrets, commit/push the workflow and handoff update, then monitor hosted CI again.
+
+### Green public CI checkpoint — 2026-11-15
+
+- Pushed commit `a637e3b` with the clean-database Messenger setup. GitHub Actions run [43669837591](https://github.com/mohsin14tech/ProspectOS/actions/runs/43669837591) completed successfully in 1m53s.
+- Hosted gates passed: secret scans for files and full Git history; Compose config; Composer metadata; clean app image build; PostgreSQL readiness; all 9 application migrations; idempotent synthetic demo seed; Doctrine Messenger transport setup; isolated `app_test` creation and all 9 test migrations; PHPUnit (47 tests / 248 assertions); container and 13 Twig template lint; mapping/schema validation; migration status (9 executed, 0 new); minified production Tailwind assets.
+- `PROJECT_CONTEXT.md` now records the green CI checkpoint and the next release phase: create/access Upsun account/project and review its generated configuration before production secrets/deployment. No production account, configuration, DNS or deployment is claimed.
+- **Next action:** continue deployment onboarding one visible step at a time, beginning with Upsun account/project access. Keep production credentials out of chat and repository files; configure them through Upsun's secret management when the project exists.
