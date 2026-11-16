@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+{% block title %}Connect a mailbox{% endblock %}
+{% block breadcrumb %}Email / Mailbox setup{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/mail.css') }}">{% endblock %}
+{% block body %}
+<div class="page-heading"><div><a href="{{ path('app_outreach') }}">Email connections</a><h1>Connect your mailbox</h1><p class="page-subtitle">Three fields, one click. ProspectOS detects your provider, fills in the servers and tests the login right away.</p></div></div>
+{% include 'outreach/_flashes.html.twig' %}
+{% set settings = values ?? (connection ? connection.settings : {}) %}
+{% set knownPreset = {'imap.gmail.com': 'gmail', 'imap.mail.yahoo.com': 'yahoo', 'imap.mail.me.com': 'icloud', 'imap.zoho.com': 'zoho'}[settings.imapHost|default('')] ?? (settings.imapHost|default('') ? 'custom' : 'gmail') %}
+<section class="panel mail-panel">
+    <h2>{{ connection ? 'Mailbox details' : 'Connect in three steps' }}</h2>
+    <p>ProspectOS reads your recent inbox messages (they stay unread at your provider). Sending is off by default and is limited to an approved test address you control.</p>
+    {% if error %}<div class="flash flash-error" id="mailbox-error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="{{ path('app_mailbox_save') }}" class="mail-form" data-controller="mailbox" {% if error %}aria-describedby="mailbox-error"{% endif %}>
+        <input type="hidden" name="_token" value="{{ csrf_token('mailbox_save') }}">
+
+        <div><label for="mail-sender"><span class="mail-step">1</span>Your email address</label><input id="mail-sender" type="email" name="sender" maxlength="180" required value="{{ settings.sender|default('') }}" autocomplete="email" placeholder="you@gmail.com" data-mailbox-target="sender" data-action="input->mailbox#detect change->mailbox#detect"></div>
+
+        <div><label for="mail-preset"><span class="mail-step">2</span>Provider</label>
+            <select id="mail-preset" data-mailbox-target="preset" data-action="mailbox#preset">
+                {% for value, label in {gmail: 'Gmail / Google Workspace', yahoo: 'Yahoo Mail', icloud: 'iCloud Mail', zoho: 'Zoho Mail', microsoft: 'Outlook / Hotmail / Microsoft 365', custom: 'Other (business email / custom servers)'} %}
+                    <option value="{{ value }}" {{ knownPreset == value ? 'selected' : '' }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <small>Detected from your address. Change it if it is wrong.</small>
+        </div>
+
+        <div class="mail-guide" data-mailbox-target="guide" data-provider="gmail" hidden>
+            <strong>Get a Gmail app password (about one minute)</strong>
+            <ol>
+                <li>Turn on <a href="https://myaccount.google.com/signinoptions/twosv" target="_blank" rel="noopener noreferrer">2-Step Verification</a> for your Google account if it is off.</li>
+                <li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">App passwords</a>, type a name such as "ProspectOS", and click Create.</li>
+                <li>Copy the 16-letter password and paste it below. Spaces are fine; ProspectOS removes them.</li>
+            </ol>
+            <small>Your normal Google password will not work. If App passwords is missing, your Workspace admin may have disabled it.</small>
+        </div>
+        <div class="mail-guide" data-mailbox-target="guide" data-provider="yahoo" hidden>
+            <strong>Yahoo needs an app password</strong>
+            <ol><li>Open <a href="https://login.yahoo.com/account/security" target="_blank" rel="noopener noreferrer">Account security</a>.</li><li>Choose "Generate app password", name it "ProspectOS", and paste it below.</li></ol>
+        </div>
+        <div class="mail-guide" data-mailbox-target="guide" data-provider="icloud" hidden>
+            <strong>iCloud needs an app-specific password</strong>
+            <ol><li>Sign in at <a href="https://account.apple.com" target="_blank" rel="noopener noreferrer">account.apple.com</a> → Sign-In and Security → App-Specific Passwords.</li><li>Create one named "ProspectOS" and paste it below.</li></ol>
+            <small>If login fails with your full address, try only the part before @ as the username (under Server settings).</small>
+        </div>
+        <div class="mail-guide" data-mailbox-target="guide" data-provider="zoho" hidden>
+            <strong>Zoho Mail</strong>
+            <ol><li>Make sure IMAP access is enabled in Zoho Mail settings → Mail Accounts.</li><li>If you use two-factor sign-in, create an <a href="https://accounts.zoho.com/home#security/app_password" target="_blank" rel="noopener noreferrer">application-specific password</a>.</li></ol>
+            <small>Accounts on zoho.eu or zoho.in use imap.zoho.eu / smtp.zoho.eu (or .in). Change them under Server settings.</small>
+        </div>
+        <div class="mail-guide mail-guide-warning" data-mailbox-target="guide" data-provider="microsoft" hidden>
+            <strong>Microsoft accounts are not supported yet</strong>
+            <p>Outlook.com, Hotmail and most Microsoft 365 tenants no longer accept passwords for IMAP/SMTP; they require Microsoft OAuth, which ProspectOS does not have yet. Use a Gmail, Yahoo, iCloud, Zoho or business mailbox instead.</p>
+        </div>
+        <div class="mail-guide" data-mailbox-target="guide" data-provider="custom" hidden>
+            <strong>Business or other email</strong>
+            <p>Enter the IMAP and SMTP server names from your email host's help page under Server settings. IMAP must use TLS on port 993.</p>
+        </div>
+
+        <div><label for="mail-password"><span class="mail-step">3</span>App password {{ connection ? '(leave blank to keep the saved one)' : '' }}</label><input id="mail-password" name="password" type="password" maxlength="1024" autocomplete="new-password" {{ not connection ? 'required' : '' }}><small>Encrypted with this server's secret and never shown again.</small></div>
+
+        <details class="mail-advanced" data-mailbox-target="servers" {{ knownPreset == 'custom' ? 'open' : '' }}><summary>Server settings and test address</summary><div class="mail-fields">
+            <div><label for="imap-host">IMAP server</label><input id="imap-host" name="imapHost" data-mailbox-target="imap" required maxlength="253" value="{{ settings.imapHost|default('imap.gmail.com') }}" placeholder="imap.your-provider.com"><small>TLS on port 993.</small></div>
+            <div><label for="smtp-host">SMTP server</label><input id="smtp-host" name="smtpHost" data-mailbox-target="smtp" required maxlength="253" value="{{ settings.smtpHost|default('smtp.gmail.com') }}" placeholder="smtp.your-provider.com"></div>
+            <div><label for="smtp-port">SMTP encryption</label><select id="smtp-port" name="smtpPort" data-mailbox-target="port"><option value="465" {{ settings.smtpPort|default(465) == 465 ? 'selected' : '' }}>TLS · port 465</option><option value="587" {{ settings.smtpPort|default(465) == 587 ? 'selected' : '' }}>Required STARTTLS · port 587</option></select></div>
+            <div><label for="mail-user">Login username</label><input id="mail-user" name="username" maxlength="180" value="{{ settings.username|default('') == settings.sender|default('') ? '' : settings.username }}" autocomplete="off" placeholder="Same as your email address"><small>Leave blank to use your email address.</small></div>
+            <div><label for="test-recipient">Test recipient you control</label><input id="test-recipient" name="testRecipient" type="email" maxlength="180" value="{{ settings.testRecipient|default('') == settings.sender|default('') ? '' : settings.testRecipient }}" placeholder="Same as your email address" data-mailbox-target="recipient"><small>The only address that can receive SMTP tests. Leave blank to use your own mailbox.</small></div>
+        </div></details>
+
+        <div class="mail-save"><button class="button button-primary" type="submit" data-turbo-submits-with="Connecting and testing…">{{ connection ? 'Save and test again' : 'Connect and test' }}</button></div>
+        <p class="mail-note">Use a mailbox you are authorized to share with this workspace. One login is used for both IMAP and SMTP.</p>
+    </form>
+</section>
+{% if connection %}
+<section class="panel mail-panel"><h2>Verify the connection</h2><p>{{ connection.testedAt ? 'IMAP and SMTP login passed on ' ~ connection.testedAt|date('d M Y, H:i') : 'Saved · login test required' }}. A successful login does not prove delivery.</p>
+    <form method="post" action="{{ path('app_mailbox_test') }}"><input type="hidden" name="_token" value="{{ csrf_token('mailbox_test') }}"><button class="button button-secondary" data-turbo-submits-with="Testing logins…">Test IMAP and SMTP</button></form>
+    {% if connection.testedAt %}<p><a class="button button-secondary" href="{{ path('app_inbox') }}">Open inbox</a></p>{% endif %}
+</section>
+<section class="panel mail-panel"><h2>Test sending</h2><p>{{ globallyPaused ? 'Server outbound pause is on.' : 'Server permits approved test sends.' }} {{ connection.paused ? 'Workspace sending is paused.' : 'Workspace test sending is enabled.' }}</p>
+    <div class="mail-actions"><form method="post" action="{{ path('app_mailbox_pause') }}"><input type="hidden" name="_token" value="{{ csrf_token('mailbox_pause') }}"><input type="hidden" name="paused" value="{{ connection.paused ? '0' : '1' }}"><button class="button button-secondary" {{ connection.paused and (globallyPaused or not connection.testedAt) ? 'disabled' : '' }}>{{ connection.paused ? 'Enable approved test sending' : 'Pause test sending' }}</button></form><a class="button button-secondary" href="{{ path('app_email_tests') }}">Review test messages</a></div>
+    {% if globallyPaused %}<details><summary>Server operator setup</summary><p>Set <code>OUTBOUND_EMAIL_PAUSED=0</code> in the private runtime environment to permit approved tests. Workspace pause, suppression checks, a five-attempt hourly limit and per-message approval still apply.</p></details>{% endif %}
+</section>
+<details class="panel mail-panel"><summary>Disconnect this mailbox</summary><p>This removes stored credentials and the local inbox cache. Messages at your provider are kept.</p><form method="post" action="{{ path('app_mailbox_disconnect') }}"><input type="hidden" name="_token" value="{{ csrf_token('mailbox_disconnect') }}"><button class="button button-secondary">Disconnect mailbox</button></form></details>
+{% endif %}
+{% endblock %}

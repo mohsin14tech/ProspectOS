@@ -43,16 +43,22 @@ final class ProcessResearchRunHandler
             if ($run->getWebsiteUrl() !== null) {
                 $inspection = $this->websiteInspector->inspect($run->getWebsiteUrl());
                 $name = mb_substr($inspection['title'] !== '' ? $inspection['title'] : $inspection['host'], 0, 180);
+                $domain = Prospect::normalizeDomain($inspection['host']);
                 $slug = 'website-'.substr(hash('sha256', $inspection['host']), 0, 32);
-                $prospect = $this->entityManager->getRepository(Prospect::class)->findOneBy([
+                $prospect = $domain === null ? null : $this->entityManager->getRepository(Prospect::class)->findOneBy([
+                    'workspace' => $run->getWorkspace(),
+                    'canonicalDomain' => $domain,
+                ]);
+                $prospect ??= $this->entityManager->getRepository(Prospect::class)->findOneBy([
                     'workspace' => $run->getWorkspace(),
                     'slug' => $slug,
                 ]);
                 if (!$prospect instanceof Prospect) {
-                    $prospect = new Prospect($run->getWorkspace(), $run, $slug, $name, 'Website submission', 'Unspecified');
+                    $prospect = new Prospect($run->getWorkspace(), $run, $slug, $name, 'Website submission', 'Unspecified', $domain);
                     $this->entityManager->persist($prospect);
                 } else {
                     $prospect->updateFromRun($run);
+                    $prospect->setCanonicalDomain($domain);
                 }
 
                 $claim = $inspection['title'] === '' ? 'The public page returned no title element.' : 'Page title observed: '.$inspection['title'];
@@ -71,11 +77,6 @@ final class ProcessResearchRunHandler
                     $this->entityManager->persist($evidence);
                 }
 
-                $score = $this->scorer->calculate(['evidenceQuality' => 60]);
-                $snapshot = $this->entityManager->getRepository(ScoreSnapshot::class)->findOneBy(['researchRun' => $run, 'prospect' => $prospect]);
-                if (!$snapshot instanceof ScoreSnapshot) {
-                    $this->entityManager->persist(new ScoreSnapshot($run->getWorkspace(), $prospect, $run, $score['score'], $score['coverage'], $score['breakdown']));
-                }
                 $this->entityManager->flush();
                 $run->complete(1);
                 $this->entityManager->flush();
@@ -89,7 +90,13 @@ final class ProcessResearchRunHandler
 
             foreach ($discovery->discover($run->getObjective()) as $fixture) {
                 $run->setStage($run->getSourceMode() === ResearchRun::SOURCE_WEB_SEARCH ? 'saving_search_candidates' : 'saving_demo_evidence');
-                $prospect = $this->entityManager->getRepository(Prospect::class)->findOneBy([
+                $sourceHost = isset($fixture['sourceUrl']) ? parse_url($fixture['sourceUrl'], PHP_URL_HOST) : null;
+                $domain = is_string($sourceHost) ? Prospect::normalizeDomain($sourceHost) : null;
+                $prospect = $domain === null ? null : $this->entityManager->getRepository(Prospect::class)->findOneBy([
+                    'workspace' => $run->getWorkspace(),
+                    'canonicalDomain' => $domain,
+                ]);
+                $prospect ??= $this->entityManager->getRepository(Prospect::class)->findOneBy([
                     'workspace' => $run->getWorkspace(),
                     'slug' => $fixture['slug'],
                 ]);
@@ -102,10 +109,12 @@ final class ProcessResearchRunHandler
                         $fixture['name'],
                         $fixture['category'],
                         $fixture['location'],
+                        $domain,
                     );
                     $this->entityManager->persist($prospect);
                 } else {
                     $prospect->updateFromRun($run);
+                    $prospect->setCanonicalDomain($domain);
                 }
 
                 $this->entityManager->flush();

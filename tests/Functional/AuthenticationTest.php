@@ -25,7 +25,7 @@ final class AuthenticationTest extends WebTestCase
         $crawler = $this->client->request('GET', '/');
         self::assertResponseRedirects('/login');
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextContains('h1', 'Welcome back.');
+        self::assertSelectorTextContains('h1', 'Sign in');
 
         $crawler = $this->client->request('GET', '/setup');
         self::assertResponseIsSuccessful();

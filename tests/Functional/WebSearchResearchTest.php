@@ -23,6 +23,55 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class WebSearchResearchTest extends KernelTestCase
 {
+    public function testRepeatResearchReusesCanonicalProspectAndPreservesFinalizedState(): void
+    {
+        self::bootKernel();
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $entityManager->getConnection()->executeStatement('TRUNCATE TABLE workspace RESTART IDENTITY CASCADE');
+        $workspace = new Workspace('Domain dedupe test', 'domain-dedupe-test');
+        $firstRun = new ResearchRun($workspace, 'Find a local business', null, ResearchRun::SOURCE_WEB_SEARCH);
+        $entityManager->persist($workspace);
+        $entityManager->persist($firstRun);
+        $entityManager->flush();
+
+        $makeHandler = static function (EntityManagerInterface $entityManager, string $url): ProcessResearchRunHandler {
+            $provider = new SearXNGDiscoveryProvider(
+                new MockHttpClient([new MockResponse(json_encode(['results' => [
+                    ['title' => 'Acme Restaurant', 'url' => $url, 'content' => 'A restaurant search candidate.', 'engine' => 'Example Engine'],
+                ]], JSON_THROW_ON_ERROR), ['http_code' => 200])]),
+                new PublicUrlPolicy(new ResearchFixtureResolver()),
+                'http://searxng:8080',
+            );
+
+            return new ProcessResearchRunHandler(
+                $entityManager,
+                new DemoProspectDiscovery(),
+                $provider,
+                new OpportunityScorer(),
+                static::getContainer()->get(WebsiteInspector::class),
+            );
+        };
+
+        $makeHandler($entityManager, 'https://acme.example/')->__invoke(new ProcessResearchRun($firstRun->getId()));
+        $prospect = $entityManager->getRepository(Prospect::class)->findOneBy(['workspace' => $workspace]);
+        self::assertInstanceOf(Prospect::class, $prospect);
+        $prospect->decide(Prospect::STATUS_FINALIZED);
+        $entityManager->flush();
+
+        $secondRun = new ResearchRun($workspace, 'Find the same business again', null, ResearchRun::SOURCE_WEB_SEARCH);
+        $entityManager->persist($secondRun);
+        $entityManager->flush();
+        $makeHandler($entityManager, 'https://www.acme.example/new-page')->__invoke(new ProcessResearchRun($secondRun->getId()));
+
+        $entityManager->clear();
+        $saved = $entityManager->getRepository(Prospect::class)->findBy(['workspace' => $workspace]);
+        self::assertCount(1, $saved);
+        self::assertSame('acme.example', $saved[0]->getCanonicalDomain());
+        self::assertSame(Prospect::STATUS_FINALIZED, $saved[0]->getStatus());
+        self::assertSame($secondRun->getId(), $saved[0]->getResearchRun()->getId());
+        self::assertSame(2, $entityManager->getRepository(EvidenceItem::class)->count(['prospect' => $saved[0]]));
+    }
+
     public function testSearchResultsPersistAsUnverifiedCandidatesWithSourceEvidence(): void
     {
         self::bootKernel();

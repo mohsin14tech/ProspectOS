@@ -40,6 +40,7 @@ final class DashboardData
                 'name' => $prospect->getName(),
                 'category' => $prospect->getCategory(),
                 'location' => $prospect->getLocation(),
+                'status' => $prospect->getStatus(),
                 'score' => $score?->getScore(),
                 'signal' => $evidence?->getClaim() ?? 'No saved evidence yet',
                 'updated' => $prospect->getUpdatedAt()->format('d M, H:i'),
@@ -67,16 +68,6 @@ final class DashboardData
             ];
         }, array_slice($runs, 0, 3));
 
-        $qualified = $this->entityManager->getRepository(ScoreSnapshot::class)->createQueryBuilder('score')
-            ->select('COUNT(DISTINCT prospect.id)')
-            ->join('score.prospect', 'prospect')
-            ->where('score.workspace = :workspace')
-            ->andWhere('score.score >= :threshold')
-            ->setParameter('workspace', $workspace)
-            ->setParameter('threshold', 70)
-            ->getQuery()
-            ->getSingleScalarResult();
-
         $locations = array_values(array_unique(array_map(static fn (Prospect $prospect): string => $prospect->getLocation(), $prospects)));
 
         return [
@@ -84,8 +75,8 @@ final class DashboardData
             'prospects' => $rows,
             'summary' => [
                 'researched' => $prospectRepository->count(['workspace' => $workspace]),
-                'qualified' => (int) $qualified,
-                'drafts' => 0,
+                'finalized' => $prospectRepository->count(['workspace' => $workspace, 'status' => Prospect::STATUS_FINALIZED]),
+                'needsReview' => $prospectRepository->count(['workspace' => $workspace, 'status' => Prospect::STATUS_NEEDS_REVIEW]),
             ],
             'locations' => $locations,
             'activity' => $activity,

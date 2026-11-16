@@ -1,7 +1,7 @@
 {% extends 'auth_base.html.twig' %}
 {% block title %}Initial workspace setup{% endblock %}
 {% block auth_content %}
-    <div class="auth-mark" aria-hidden="true">P</div>
+    <div class="auth-mark">{% include '_mascot.html.twig' with {size: 76, class: 'auth-mascot', track: true} %}</div>
     <p class="eyebrow">First-run setup</p>
     <h1>Create your workspace.</h1>
     <p class="page-subtitle">This one-time form creates the first owner account. It requires the private setup token configured by the operator. Public registration closes after setup.</p>

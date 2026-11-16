@@ -4,8 +4,22 @@
 {% block title %}Command centre{% endblock %}
 {% block body %}
 <div class="page-heading">
-    <div><div class="eyebrow">{{ 'now'|date('l, d F Y') }}</div><h1>Your workspace, in focus.</h1><p class="page-subtitle">Review saved research and choose what to investigate next.</p></div>
+    <div><div class="eyebrow">{{ 'now'|date('l, d F Y') }}</div><h1>Your workspace, in focus.</h1><p class="page-subtitle">Find leads, put them on trial with evidence, and keep what your team decides.</p></div>
 </div>
+
+<ol class="workflow-strip" aria-label="How ProspectOS works">
+    <li><a href="{{ path('app_research') }}"><span class="workflow-step">1</span><span class="workflow-icon">{{ icons.icon('search', 20) }}</span><strong>Research</strong><small>Search the web or inspect a site. Every finding keeps its source.</small></a></li>
+    <li><a href="#prospects"><span class="workflow-step">2</span><span class="workflow-icon">{{ icons.icon('users', 20) }}</span><strong>Review evidence</strong><small>Open a lead to see sources and a deterministic, explainable score.</small></a></li>
+    <li class="workflow-highlight"><a href="{{ path('app_court') }}"><span class="workflow-step">3</span><span class="workflow-icon">{{ icons.icon('scale', 20) }}</span><strong>Evidence Court</strong><small>{% if awaitingRuling > 0 %}{{ awaitingRuling }} {{ awaitingRuling == 1 ? 'hearing awaits' : 'hearings await' }} your ruling.{% else %}AI counsel argue for and against. Uncited claims are struck.{% endif %}</small></a></li>
+    <li><a href="{{ path('app_memory') }}"><span class="workflow-step">4</span><span class="workflow-icon">{{ icons.icon('bookmark', 20) }}</span><strong>Team memory</strong><small>Your rulings become precedent for similar leads.</small></a></li>
+</ol>
+
+{% if not aiReady %}
+<section class="ai-callout" role="note">
+    <div><strong>AI is not connected yet.</strong><p>Research and scoring work without it. Evidence Court and AI summaries need one tested model connection.</p></div>
+    <a class="button button-primary" href="{{ path('app_integrations_ai') }}">Connect AI</a>
+</section>
+{% endif %}
 
 <section class="hero-panel" aria-labelledby="research-title">
     <div class="hero-copy">
@@ -25,9 +39,9 @@
 <section class="summary-section" aria-labelledby="overview-title">
     <div class="section-heading"><div><h2 id="overview-title">Workspace overview</h2><p>Saved records and research activity</p></div><span class="freshness">{{ 'now'|date('H:i') }} · Local time</span></div>
     <div class="summary-grid">
-        <article class="summary-card"><div class="summary-label"><span>Saved candidates</span><span class="metric-icon blue">{{ icons.icon('building', 18) }}</span></div><div class="summary-value">{{ summary.researched }}</div><div class="metric-foot">Across {{ locations is empty ? 'no saved locations yet' : locations|join(' and ') }}</div></article>
-        <article class="summary-card"><div class="summary-label"><span>Scores at 70 or higher</span><span class="metric-icon green">{{ icons.icon('arrow-up-right', 18) }}</span></div><div class="summary-value">{{ summary.qualified }}</div><div class="metric-foot">A score is a review aid, not a verified outcome</div></article>
-        <article class="summary-card"><div class="summary-label"><span>Outreach drafts</span><span class="metric-icon amber">{{ icons.icon('mail', 18) }}</span></div><div class="summary-value">{{ summary.drafts }}</div><div class="metric-foot">Drafting is not available yet</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Saved candidates</span><span class="metric-icon blue">{{ icons.icon('building', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.researched }}</div><div class="metric-foot">Across {{ locations is empty ? 'no saved locations yet' : locations|join(' and ') }}</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Finalized leads</span><span class="metric-icon green">{{ icons.icon('arrow-up-right', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.finalized }}</div><div class="metric-foot">Reviewed examples saved to team memory</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Needs review</span><span class="metric-icon amber">{{ icons.icon('activity', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.needsReview }}</div><div class="metric-foot">Candidates awaiting a decision</div></article>
     </div>
 </section>
 
@@ -39,7 +53,7 @@
         {% for prospect in prospects %}
             <article class="prospect-row">
                 <div class="company-avatar avatar-{{ loop.index }}" aria-hidden="true">{{ prospect.initials }}</div>
-                <div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: prospect.id}) }}">{{ prospect.name }}</a></h3>{% if prospect.score is not null %}<span class="score score-{{ loop.index }}">{{ prospect.score }}</span>{% else %}<span class="score score-unrated">Not scored</span>{% endif %}</div><p>{{ prospect.category }} · {{ prospect.location }}</p><div class="signal">{{ prospect.signal }}</div></div>
+                <div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: prospect.id}) }}">{{ prospect.name }}</a></h3><span class="status-tag">{{ prospect.status|replace({'_': ' '})|title }}</span></div><p>{{ prospect.category }} · {{ prospect.location }}{% if prospect.score is not null %} · Score {{ prospect.score }}{% endif %}</p><div class="signal">{{ prospect.signal }}</div></div>
                 <span class="row-time">{{ prospect.updated }}</span>
             </article>
         {% endfor %}
@@ -57,5 +71,5 @@
     </section>
 </div>
 
-<section class="integration-strip" id="integrations"><div class="integration-icon">{{ icons.icon('plug', 20) }}</div><div><strong>See which services are ready</strong><p>Search is available locally. AI, email, and social providers still need setup.</p></div><a class="button button-secondary" href="{{ path('app_integrations') }}">Open integrations</a></section>
+<section class="integration-strip" id="integrations"><div class="integration-icon">{{ icons.icon('plug', 20) }}</div><div><strong>Continue the lead workflow</strong><p>Review team memory, connect AI or prepare a Gmail draft after finalizing a lead.</p></div><a class="button button-secondary" href="{{ path('app_integrations') }}">Open integrations</a></section>
 {% endblock %}

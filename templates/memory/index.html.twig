@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Prospect memory{% endblock %}
+{% block breadcrumb %}Prospect memory{% endblock %}
+{% block body %}
+    <div class="page-heading">
+        <div><div class="eyebrow">Team knowledge</div><h1>Prospect memory</h1><p class="page-subtitle">Reviewed leads and the reasons your team kept or rejected them. New research can use these examples.</p></div>
+    </div>
+    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+
+    <section class="summary-grid" aria-label="Lead memory counts">
+        <article class="summary-card"><div class="summary-label">Finalized leads</div><div class="summary-value">{{ counts.finalized }}</div><div class="metric-foot">Approved examples for future research</div></article>
+        <article class="summary-card"><div class="summary-label">Needs review</div><div class="summary-value">{{ counts.needs_review }}</div><div class="metric-foot">Candidates awaiting a person’s decision</div></article>
+        <article class="summary-card"><div class="summary-label">Rejected leads</div><div class="summary-value">{{ counts.rejected }}</div><div class="metric-foot">Kept as examples of what to avoid</div></article>
+    </section>
+
+    <section class="panel" aria-labelledby="memory-records-title">
+        <div class="panel-heading"><div><h2 id="memory-records-title">Lead records</h2><p>Memory is workspace-scoped, searchable by company name on this page, and based on saved human decisions.</p></div><a class="button button-primary" href="{{ path('app_research') }}">Find leads</a></div>
+        {% if prospects is empty %}<div class="empty-state"><h3>Your memory is ready</h3><p>Run research, review the evidence, then finalize or reject a lead to start building team memory.</p></div>
+        {% else %}
+            <div class="prospect-list">
+                {% for prospect in prospects %}
+                    <article class="prospect-row">
+                        <div class="company-avatar avatar-{{ loop.index }}">{{ prospect.name|slice(0, 1)|upper }}</div>
+                        <div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: prospect.id}) }}">{{ prospect.name }}</a></h3><span class="status-tag">{{ prospect.status|replace({'_': ' '})|title }}</span></div><p>{{ prospect.category }} · {{ prospect.location }}{% if prospect.canonicalDomain %} · {{ prospect.canonicalDomain }}{% endif %}</p></div>
+                        <span class="row-time">{{ prospect.updatedAt|date('d M, H:i') }}</span>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="decision-history-title">
+        <div class="panel-heading"><div><h2 id="decision-history-title">Decision history</h2><p>Reasons stay attached to the decision so future recommendations can be explained.</p></div></div>
+        {% if decisions is empty %}<p class="empty-note">No human decisions have been saved yet.</p>{% else %}
+            <ol class="activity-list">
+                {% for item in decisions %}
+                    <li class="activity-item"><span class="timeline-mark mark-research" aria-hidden="true">✓</span><div><strong><a href="{{ path('app_prospect_show', {id: item.prospect.id}) }}">{{ item.prospect.name }}</a> · {{ item.decision|replace({'_': ' '})|title }}</strong><p>{{ item.reason }}</p><time>{{ item.actor.email }} · {{ item.createdAt|date('d M Y, H:i') }}</time></div></li>
+                {% endfor %}
+            </ol>
+        {% endif %}
+    </section>
+{% endblock %}

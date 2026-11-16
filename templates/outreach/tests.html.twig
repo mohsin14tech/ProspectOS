@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+{% block title %}Email test approvals{% endblock %}
+{% block breadcrumb %}Email / Test approvals{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/mail.css') }}">{% endblock %}
+{% block body %}
+<div class="page-heading"><div><a href="{{ path('app_mailbox') }}">Mailbox settings</a><h1>Review a test email</h1><p class="page-subtitle">Prepare → approve → send. Each approval lasts 15 minutes.</p></div></div>
+{% include 'outreach/_flashes.html.twig' %}
+{% if connection %}
+<section class="panel mail-panel"><h2>Prepare test message</h2><p>From <strong>{{ connection.sender }}</strong> to <strong>{{ connection.testRecipient }}</strong>. The subject always starts with [ProspectOS test].</p>
+<form method="post" action="{{ path('app_email_test_create') }}" class="mail-form">
+    <input type="hidden" name="_token" value="{{ csrf_token('email_test_create') }}">
+    <div><label for="test-subject">Subject (required)</label><input id="test-subject" name="subject" maxlength="200" required></div>
+    <div><label for="test-body">Message (required)</label><textarea id="test-body" name="body" maxlength="10000" rows="5" required></textarea></div>
+    <label class="mail-check"><input type="checkbox" name="contact_checked" value="1" required><span>I control this test recipient and have checked my provider's sending rules.</span></label>
+    <button class="button button-primary" data-turbo-submits-with="Preparing…">Prepare for approval</button>
+</form></section>
+{% else %}<section class="panel mail-panel"><h2>Connect a mailbox first</h2><a class="button button-primary" href="{{ path('app_mailbox') }}">Connect IMAP and SMTP</a></section>{% endif %}
+<section class="panel mail-panel"><h2>Approval and attempt history</h2><p>Accepted means the SMTP server accepted the message, not that it arrived. Uncertain or attempting means check your provider before doing anything else; ProspectOS will not resend that action.</p>
+{% for action in actions %}
+<article class="mail-history"><div class="mail-actions"><h3>{{ action.payload.subject }}</h3><span class="status-tag">{{ action.status|capitalize }}</span></div>
+    <p>From {{ action.payload.from }} → {{ action.payload.to|join(', ') }}</p><pre class="mail-body">{{ action.payload.text }}</pre>
+    <p class="mail-note">Prepared by {{ action.actor.email }} · {{ action.createdAt|date('d M Y, H:i') }}{% if action.approvedBy %}<br>Approved by {{ action.approvedBy.email }} · valid until {{ action.approvedUntil|date('d M Y, H:i') }}{% endif %}{% if action.providerId %}<br>Message ID: {{ action.providerId }}{% endif %}</p>
+    <div class="mail-actions">
+    {% if action.status == 'pending' %}<form method="post" action="{{ path('app_email_test_decide', {id: action.id, decision: 'approve'}) }}"><input type="hidden" name="_token" value="{{ csrf_token('email_approve_' ~ action.id) }}"><input type="hidden" name="payload_hash" value="{{ action.payloadHash }}"><button class="button button-secondary">Approve this message</button></form>{% endif %}
+    {% if action.status in ['pending', 'approved'] %}<form method="post" action="{{ path('app_email_test_decide', {id: action.id, decision: 'reject'}) }}"><input type="hidden" name="_token" value="{{ csrf_token('email_reject_' ~ action.id) }}"><button class="button button-secondary">Reject</button></form>{% endif %}
+    {% if action.status == 'approved' and action.approvedUntil > date() %}<form method="post" action="{{ path('app_email_test_send', {id: action.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('email_send_' ~ action.id) }}"><button class="button button-secondary" {{ globallyPaused or not connection or connection.paused or not connection.testedAt ? 'disabled' : '' }} data-turbo-submits-with="Sending once…">Send approved test</button></form>{% endif %}
+    </div>
+{% if action.status == 'approved' and action.approvedUntil <= date() %}<p>Approval expired. Prepare and review a new test.</p>{% endif %}
+</article>
+{% else %}<p>No tests have been prepared or sent.</p>{% endfor %}
+</section>
+{% endblock %}

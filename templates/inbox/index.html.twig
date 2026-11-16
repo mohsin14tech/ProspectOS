@@ -1,60 +1,19 @@
 {% extends 'base.html.twig' %}
-
 {% block title %}Inbox{% endblock %}
-{% block breadcrumb %}Inbox{% endblock %}
-
+{% block breadcrumb %}Email / Inbox{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/mail.css') }}">{% endblock %}
 {% block body %}
-    <div class="page-heading inbox-heading">
-        <div>
-            <div class="eyebrow">MailOS mailbox</div>
-            <h1>Inbox</h1>
-            <p class="page-subtitle">A private, workspace-scoped view of recent message headers and thread state.</p>
-        </div>
-        {% if mailConfigured %}
-            <form method="post" action="{{ path('app_inbox_sync') }}">
-                <input type="hidden" name="_token" value="{{ csrf_token('mailos_inbox_sync') }}">
-                <button class="button button-primary" type="submit">Sync inbox</button>
-            </form>
-        {% endif %}
-    </div>
-
-    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
-    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
-
-    {% if not mailConfigured %}
-        <section class="panel inbox-state" aria-labelledby="mail-setup-title">
-            <span class="inbox-state-mark" aria-hidden="true">M</span>
-            <div>
-                <h2 id="mail-setup-title">Connect a MailOS mailbox</h2>
-                <p>Inbox sync is off until a read-only MailOS API key and one permitted mailbox are configured. ProspectOS requests message headers and thread state only; it does not fetch bodies or attachments.</p>
-                <p class="integration-meta">MailOS currently uses its <code>jmap</code> scope for both reading and submission. ProspectOS will not enable that broader key for sync. A separate read-only MailOS scope is needed before connecting; only then configure <code>MAILOS_API_KEY</code>, <code>MAILOS_MAILBOX_ID</code>, and <code>MAILOS_READ_ONLY_SCOPE_CONFIRMED=true</code>.</p>
-            </div>
-        </section>
-    {% elseif messages is empty %}
-        <section class="panel inbox-state" aria-labelledby="inbox-empty-title">
-            <span class="inbox-state-mark" aria-hidden="true">M</span>
-            <div>
-                <h2 id="inbox-empty-title">No messages synced yet</h2>
-                <p>Sync up to 25 recent inbox message headers. Message bodies and attachments stay in MailOS.</p>
-            </div>
-        </section>
-    {% else %}
-        <section class="panel inbox-list-panel" aria-labelledby="inbox-list-title">
-            <div class="panel-heading"><div><h2 id="inbox-list-title">Recent messages</h2><p>Up to 25 message headers from the selected MailOS inbox.</p></div><span class="evidence-count">{{ messages|length }} saved</span></div>
-            <ul class="inbox-list">
-                {% for item in messages %}
-                    <li>
-                        <a class="inbox-row {{ item.read ? '' : 'is-unread' }}" href="{{ path('app_inbox_thread', {id: item.id}) }}">
-                            <span class="inbox-unread-mark" aria-hidden="true"></span>
-                            <span class="inbox-row-main">
-                                <span class="inbox-row-top"><strong>{{ item.fromAddress }}</strong><time datetime="{{ item.receivedAt|date('c') }}">{{ item.receivedAt|date('M j, Y · H:i') }}</time></span>
-                                <span class="inbox-subject">{{ item.subject }}</span>
-                                <span class="inbox-row-meta">{{ item.threadCount }} {{ item.threadCount == 1 ? 'message' : 'messages' }} in thread{% if item.toAddress %} · To {{ item.toAddress }}{% endif %}</span>
-                            </span>
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
-        </section>
-    {% endif %}
+<div class="page-heading"><div><h1>Inbox</h1><p class="page-subtitle">Recent messages from your connected mailboxes, shared with this workspace.</p></div><a class="button button-secondary" href="{{ path('app_outreach') }}">Email connections</a></div>
+{% include 'outreach/_flashes.html.twig' %}
+<section class="panel mail-panel"><h2>Sync recent mail</h2><p>Fetch up to 10 recent inbox messages per connection. Bodies load only when requested; messages stay unread at your provider.</p>
+<div class="mail-actions">
+{% if gmail and gmail.inboxAccess %}<form method="post" action="{{ path('app_inbox_sync', {provider: 'gmail'}) }}"><input type="hidden" name="_token" value="{{ csrf_token('sync_gmail') }}"><button class="button button-primary" data-turbo-submits-with="Syncing Gmail…">Sync Gmail</button></form>{% endif %}
+{% if business and business.testedAt %}<form method="post" action="{{ path('app_inbox_sync', {provider: 'business'}) }}"><input type="hidden" name="_token" value="{{ csrf_token('sync_business') }}"><button class="button {{ gmail and gmail.inboxAccess ? 'button-secondary' : 'button-primary' }}" data-turbo-submits-with="Syncing IMAP…">Sync IMAP inbox</button></form>{% endif %}
+{% if not (gmail and gmail.inboxAccess) and not (business and business.testedAt) %}<a class="button button-primary" href="{{ path('app_outreach') }}">Connect a mailbox</a>{% endif %}
+</div></section>
+<section class="panel mail-panel"><h2>Cached messages</h2><p class="mail-note">Up to 100 recent cached messages per mailbox. This is not a full mailbox mirror; deleted or moved provider messages can remain until the cache is cleared.</p>
+{% for message in messages %}<a class="mail-row" href="{{ path('app_inbox_show', {id: message.id}) }}"><div class="mail-row-heading"><strong>{{ message.metadata.subject ?: '(No subject)' }}</strong><span class="status-tag">{{ message.gmailConnection ? 'Gmail' : 'IMAP' }}</span></div><span>{{ message.metadata.sender }}</span><small>{{ message.metadata.date }} · Cached {{ message.syncedAt|date('d M Y, H:i') }}</small></a>
+{% else %}<div class="mail-empty"><h3>No messages synced yet</h3><p>Connect a mailbox, then sync to see its recent inbox messages here.</p></div>{% endfor %}
+</section>
+{% if messages is not empty %}<details class="panel mail-panel"><summary>Local cache controls</summary><p>Workspace admins can clear cached headers and bodies. Mail at your provider remains unchanged.</p><form method="post" action="{{ path('app_inbox_clear') }}"><input type="hidden" name="_token" value="{{ csrf_token('clear_mail') }}"><button class="button button-secondary">Clear local mail cache</button></form></details>{% endif %}
 {% endblock %}

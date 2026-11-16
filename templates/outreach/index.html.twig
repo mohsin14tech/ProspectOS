@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+{% block title %}Email outreach{% endblock %}
+{% block breadcrumb %}Email outreach{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/mail.css') }}">{% endblock %}
+{% block body %}
+    <div class="page-heading"><div><div class="eyebrow">Workspace email</div><h1>Email connections</h1><p class="page-subtitle">Connect Gmail or an IMAP/SMTP mailbox to read recent mail and prepare your next reply.</p></div><a class="button button-primary" href="{{ path('app_inbox') }}">Open inbox</a></div>
+    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+
+    <section class="panel mail-panel mail-recommended" aria-labelledby="mailbox-title">
+        <div class="integration-title"><h2 id="mailbox-title">Your mailbox</h2><span class="connection-status {{ business and business.testedAt ? 'is-configured' : 'is-missing' }}">{{ business ? (business.testedAt ? 'Connected and tested' : 'Saved · login test failed or pending') : 'Not connected' }}</span></div>
+        {% if business %}
+            <p>{{ business.settings.sender }} · reads your recent inbox over IMAP. Sending is limited to approved tests to {{ business.settings.testRecipient }}.</p>
+            <a class="button button-secondary" href="{{ path('app_mailbox') }}">Manage mailbox</a>
+        {% else %}
+            <p><strong>Recommended. Takes about one minute.</strong> Works with Gmail, Yahoo, iCloud, Zoho and most business email. Enter your address and an app password; ProspectOS fills in the servers and tests the login for you.</p>
+            <a class="button button-primary" href="{{ path('app_mailbox') }}">Connect your mailbox</a>
+        {% endif %}
+    </section>
+
+    {% if connection or gmailConfigured %}
+    <section class="panel integration-card" aria-labelledby="gmail-title">
+        <div class="integration-symbol integration-symbol-mail" aria-hidden="true">G</div>
+        <div class="integration-copy">
+            <div class="integration-title"><h2 id="gmail-title">Gmail</h2><span class="connection-status {{ connection ? 'is-configured' : 'is-missing' }}">{{ connection ? 'Connected' : 'Not connected' }}</span></div>
+            {% if connection %}
+                <p>Connected account: <strong>{{ connection.emailAddress }}</strong> · Connected {{ connection.connectedAt|date('d M Y') }}.</p>
+                <p>{{ connection.inboxAccess ? 'Inbox reads and reply drafts are enabled.' : 'This older grant is draft-only. Reconnect to allow inbox reads.' }} Review and send drafts in Gmail. Disconnecting removes the saved encrypted refresh token and cached messages; revoke the grant in Google Account settings to remove Google's authorization too.</p>
+                {% if not connection.inboxAccess and gmailConfigured %}<form method="post" action="{{ path('app_outreach_gmail_connect') }}"><input type="hidden" name="_token" value="{{ csrf_token('connect_gmail') }}"><button class="button button-secondary">Reconnect for inbox access</button></form>{% endif %}
+                <form method="post" action="{{ path('app_outreach_gmail_disconnect') }}"><input type="hidden" name="_token" value="{{ csrf_token('disconnect_gmail') }}"><button class="button button-secondary" type="submit">Disconnect Gmail</button></form>
+            {% elseif gmailConfigured %}
+                <p>Connect one Gmail account for this workspace. Google grants <code>gmail.readonly</code> for inbox reads and <code>gmail.compose</code> for drafts. The compose scope also allows sending, but this Gmail connector only reads messages and creates drafts. Mail is shared with workspace members.</p>
+                <form method="post" action="{{ path('app_outreach_gmail_connect') }}"><input type="hidden" name="_token" value="{{ csrf_token('connect_gmail') }}"><button class="button button-primary" type="submit">Connect Gmail</button></form>
+            {% else %}
+                <p>Gmail is not connected. To enable it, configure a Google OAuth web client with the callback URI below, enable the Gmail API and set the client values in the ignored local environment or the hosting platform’s secret settings.</p>
+                <p class="integration-meta">Callback URI: <code>{{ app.request.schemeAndHttpHost }}/outreach/gmail/callback</code></p>
+                <p class="integration-disclosure">Google may require OAuth consent-screen setup and verification before other users can connect. Until configured, no mailbox is connected.</p>
+            {% endif %}
+        </div>
+    </section>
+    {% else %}
+    <details class="panel mail-panel">
+        <summary>Advanced: Gmail API with Google OAuth (for developers)</summary>
+    <section class="integration-card" aria-labelledby="gmail-title">
+        <div class="integration-symbol integration-symbol-mail" aria-hidden="true">G</div>
+        <div class="integration-copy">
+            <div class="integration-title"><h2 id="gmail-title">Gmail</h2><span class="connection-status {{ connection ? 'is-configured' : 'is-missing' }}">{{ connection ? 'Connected' : 'Not connected' }}</span></div>
+            {% if connection %}
+                <p>Connected account: <strong>{{ connection.emailAddress }}</strong> · Connected {{ connection.connectedAt|date('d M Y') }}.</p>
+                <p>{{ connection.inboxAccess ? 'Inbox reads and reply drafts are enabled.' : 'This older grant is draft-only. Reconnect to allow inbox reads.' }} Review and send drafts in Gmail. Disconnecting removes the saved encrypted refresh token and cached messages; revoke the grant in Google Account settings to remove Google's authorization too.</p>
+                {% if not connection.inboxAccess and gmailConfigured %}<form method="post" action="{{ path('app_outreach_gmail_connect') }}"><input type="hidden" name="_token" value="{{ csrf_token('connect_gmail') }}"><button class="button button-secondary">Reconnect for inbox access</button></form>{% endif %}
+                <form method="post" action="{{ path('app_outreach_gmail_disconnect') }}"><input type="hidden" name="_token" value="{{ csrf_token('disconnect_gmail') }}"><button class="button button-secondary" type="submit">Disconnect Gmail</button></form>
+            {% elseif gmailConfigured %}
+                <p>Connect one Gmail account for this workspace. Google grants <code>gmail.readonly</code> for inbox reads and <code>gmail.compose</code> for drafts. The compose scope also allows sending, but this Gmail connector only reads messages and creates drafts. Mail is shared with workspace members.</p>
+                <form method="post" action="{{ path('app_outreach_gmail_connect') }}"><input type="hidden" name="_token" value="{{ csrf_token('connect_gmail') }}"><button class="button button-primary" type="submit">Connect Gmail</button></form>
+            {% else %}
+                <p>Gmail is not connected. To enable it, configure a Google OAuth web client with the callback URI below, enable the Gmail API and set the client values in the ignored local environment or the hosting platform’s secret settings.</p>
+                <p class="integration-meta">Callback URI: <code>{{ app.request.schemeAndHttpHost }}/outreach/gmail/callback</code></p>
+                <p class="integration-disclosure">Google may require OAuth consent-screen setup and verification before other users can connect. Until configured, no mailbox is connected.</p>
+            {% endif %}
+        </div>
+    </section>
+    </details>
+    {% endif %}
+
+    <section class="panel" aria-labelledby="suppression-title">
+        <div class="panel-heading"><div><h2 id="suppression-title">Workspace suppression list</h2><p>Blocks Gmail drafts, reply drafts and SMTP tests to these addresses.</p></div></div>
+        <form method="post" action="{{ path('app_outreach_suppress') }}" class="auth-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('suppress_contact') }}">
+            <label for="suppressed-email">Email address to suppress</label><input id="suppressed-email" name="email" type="email" maxlength="180" autocomplete="email" required>
+            <label for="suppressed-reason">Reason</label><input id="suppressed-reason" name="reason" type="text" maxlength="500" required placeholder="Opt-out, complaint, invalid recipient, or other reason">
+            <button class="button button-secondary" type="submit">Add suppression</button>
+        </form>
+        {% if suppressedContacts is not empty %}<ul class="evidence-list">{% for item in suppressedContacts %}<li class="evidence-card"><strong>{{ item.emailAddress }}</strong><p>{{ item.reason }}</p><small>Added by {{ item.actor.email }} · {{ item.createdAt|date('d M Y') }}</small></li>{% endfor %}</ul>{% else %}<p class="empty-note">No workspace suppressions have been recorded.</p>{% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="drafts-title">
+        <div class="panel-heading"><div><h2 id="drafts-title">Draft history</h2><p>ProspectOS records the recipient, subject and provider draft ID. The message body stays in Gmail.</p></div></div>
+        {% if drafts is empty %}<p class="empty-note">No Gmail drafts have been created from this workspace yet.</p>{% else %}
+            <div class="prospect-list">{% for draft in drafts %}<article class="prospect-row"><div class="company-avatar avatar-{{ loop.index }}">{{ draft.prospect.name|slice(0, 1)|upper }}</div><div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: draft.prospect.id}) }}">{{ draft.prospect.name }}</a></h3><span class="status-tag">Draft only</span></div><p>{{ draft.recipient }} · {{ draft.subject }}</p><small>{{ draft.actor.email }} · {{ draft.createdAt|date('d M Y, H:i') }}</small></div></article>{% endfor %}</div>
+        {% endif %}
+    </section>
+{% endblock %}

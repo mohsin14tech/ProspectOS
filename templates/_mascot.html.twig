@@ -1,0 +1,23 @@
+{#
+    ProspectOS mascot, traced to vector from the brand artwork.
+    Parts are separate so CSS can animate them: the eye blinks and follows the pointer,
+    the hair bounces on hover, and the dot floats. Colors come from --mascot-ink / --mascot-face.
+    Usage: {% include '_mascot.html.twig' with {size: 40, class: 'brand-mascot', track: true} %}
+#}
+{% set size = size|default(40) %}
+<svg class="mascot {{ class|default('') }}" width="{{ size }}" height="{{ size }}" viewBox="190 150 620 680" fill="none" role="img" aria-label="ProspectOS" {% if track|default(false) %}data-mascot-track{% endif %}>
+    <g class="mascot-figure">
+        <circle class="mascot-ear" cx="336" cy="664" r="58" fill="var(--mascot-face)" stroke="var(--mascot-ink)" stroke-width="22"/>
+        <path class="mascot-ear-inner" d="M340 637c15 10 18 33 8 48" stroke="var(--mascot-ink)" stroke-width="15" stroke-linecap="round"/>
+        <path class="mascot-face" d="M418 505c72 0 142-30 182-80 60 65 100 135 100 215 0 100-70 160-170 160-70 0-120-30-148-88l10-84c33-38 38-88 26-123Z" fill="var(--mascot-face)" stroke="var(--mascot-ink)" stroke-width="22" stroke-linejoin="round"/>
+        <g class="mascot-hair">
+            <path d="M300 600c-50-30-78-80-72-120 5-35 34-52 68-56-34-4-66-19-64-49 2-27 38-35 68-15 10 8 18 18 20 22 2-62 40-100 85-100 25 0 43 10 51 22 24-64 74-126 139-126 65 0 95 52 91 92-2 30-12 50-24 60 38 10 50 40 44 65-8 30-26 50-51 65l-55-35c-40 50-110 80-182 80 12 35 7 85-26 123-22-28-52-33-92-28Z" fill="var(--mascot-ink)"/>
+        </g>
+        <g class="mascot-eye-socket">
+            <circle class="mascot-eye" cx="526" cy="555" r="24" fill="var(--mascot-ink)"/>
+        </g>
+        <path class="mascot-wink" d="M601 581c10 21 45 26 57 1" stroke="var(--mascot-ink)" stroke-width="15" stroke-linecap="round"/>
+        <path class="mascot-chin" d="M382 712l10-6" stroke="var(--mascot-ink)" stroke-width="15" stroke-linecap="round"/>
+    </g>
+    <circle class="mascot-dot" cx="738" cy="537" r="24" fill="var(--mascot-ink)"/>
+</svg>

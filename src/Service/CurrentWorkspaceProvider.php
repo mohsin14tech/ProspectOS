@@ -33,4 +33,17 @@ final class CurrentWorkspaceProvider
 
         return $membership->getWorkspace();
     }
+
+    public function requireAdmin(): Workspace
+    {
+        $workspace = $this->get();
+        $membership = $this->entityManager->getRepository(WorkspaceMembership::class)->findOneBy([
+            'workspace' => $workspace, 'user' => $this->security->getUser(),
+        ]);
+        if (!$membership instanceof WorkspaceMembership || !in_array($membership->getRole(), [WorkspaceMembership::ROLE_OWNER, WorkspaceMembership::ROLE_ADMIN], true)) {
+            throw new AccessDeniedException('Only workspace owners and admins can manage shared connections.');
+        }
+
+        return $workspace;
+    }
 }

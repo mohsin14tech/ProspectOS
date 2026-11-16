@@ -3,6 +3,7 @@
 
 {% block title %}{{ prospect.name }} · Prospect report{% endblock %}
 {% block breadcrumb %}Prospect report{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/court.css') }}">{% endblock %}
 {% block body %}
 {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
 {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
@@ -11,13 +12,76 @@
         <a class="text-link report-back" href="{{ path('app_dashboard') }}#prospects">{{ icons.icon('chevron-left', 16) }}Back to prospects</a>
         <div class="eyebrow"><span class="eyebrow-dot"></span>Evidence brief · {{ prospect.sourceMode|replace({'_': ' '})|title }}</div>
         <h1>{{ prospect.name }}</h1>
-        <p class="page-subtitle">{{ prospect.category }} · {{ prospect.location }}</p>
+        <p class="page-subtitle">{{ prospect.category }} · {{ prospect.location }}{% if prospect.canonicalDomain %} · {{ prospect.canonicalDomain }}{% endif %}</p>
     </div>
     {% if prospect.sourceMode == 'web_search' %}<span class="status-tag">Unverified search candidate</span>{% elseif prospect.sourceMode == 'demo' %}<span class="status-tag">Synthetic sample</span>{% else %}<span class="status-tag status-completed">Website inspected</span>{% endif %}
 </div>
 
 <div class="report-layout">
     <main class="report-main">
+        <section class="panel court-cta" aria-labelledby="court-cta-title">
+            <div>
+                <h2 id="court-cta-title">Put this lead on trial</h2>
+                <p>An AI Advocate and an AI Skeptic argue from the sources below. Claims without a citation are struck automatically. You rule.</p>
+            </div>
+            {% if aiConfigured %}
+                <form method="post" action="{{ path('app_court_open', {id: prospect.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('court_open_' ~ prospect.id) }}">
+                    <button class="button button-primary" type="submit">{{ icons.icon('scale', 16) }}Open Evidence Court</button>
+                </form>
+            {% else %}
+                <a class="button button-secondary" href="{{ path('app_integrations_ai') }}">Connect AI to open court</a>
+            {% endif %}
+        </section>
+        <section class="panel evidence-panel" aria-labelledby="lead-memory-title">
+            <div class="panel-heading"><div><h2 id="lead-memory-title">Team memory</h2><p>Save a human decision and its reason. Future reports can use reviewed examples from this workspace.</p></div><span class="status-tag">{{ prospect.status|replace({'_': ' '})|title }}</span></div>
+            <form method="post" action="{{ path('app_prospect_decide', {id: prospect.id}) }}" class="auth-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('decide_prospect_' ~ prospect.id) }}">
+                <label for="prospect-decision">Your decision</label>
+                <select id="prospect-decision" name="decision" required>
+                    <option value="needs_review">Needs more review</option>
+                    <option value="finalized">Finalize for team memory</option>
+                    <option value="rejected">Reject and remember why</option>
+                    <option value="archived">Archive</option>
+                </select>
+                <label for="decision-reason">Why? <span>Required · 3–1000 characters</span></label>
+                <textarea id="decision-reason" name="reason" rows="3" minlength="3" maxlength="1000" required placeholder="For example: Keep because the source confirms a likely fit; verify the contact before outreach."></textarea>
+                <button class="button button-primary" type="submit">Save decision</button>
+            </form>
+            {% if decisions is not empty %}
+                <h3>Decision history</h3>
+                <ol class="activity-list">
+                    {% for item in decisions %}<li class="activity-item"><span class="timeline-mark mark-research" aria-hidden="true">✓</span><div><strong>{{ item.decision|replace({'_': ' '})|title }}</strong><p>{{ item.reason }}</p><time>{{ item.actor.email }} · {{ item.createdAt|date('d M Y, H:i') }}</time></div></li>{% endfor %}
+                </ol>
+            {% endif %}
+        </section>
+
+        {% if memoryExamples is not empty %}
+            <section class="panel evidence-panel" aria-labelledby="memory-examples-title">
+                <div class="panel-heading"><div><h2 id="memory-examples-title">Similar reviewed leads</h2><p>These workspace decisions may help frame this review. They are not evidence about this company.</p></div></div>
+                <ul class="evidence-list">{% for item in memoryExamples %}<li class="evidence-card"><h3><a href="{{ path('app_prospect_show', {id: item.prospect.id}) }}">{{ item.prospect.name }}</a> · {{ item.decision|replace({'_': ' '})|title }}</h3><p>{{ item.reason }}</p><small>{{ item.prospect.category }} · {{ item.prospect.location }} · {{ item.createdAt|date('d M Y') }}</small></li>{% endfor %}</ul>
+            </section>
+        {% endif %}
+
+        <section class="panel evidence-panel" aria-labelledby="outreach-title">
+            <div class="panel-heading"><div><h2 id="outreach-title">Prepare email outreach</h2><p>Write a draft in Gmail for you to review. ProspectOS will not send it.</p></div></div>
+            {% if prospect.status != 'finalized' %}
+                <p class="integration-disclosure">Finalize this lead in Team memory before preparing an outreach draft.</p>
+            {% elseif not gmailConnection %}
+                <p class="integration-disclosure">Connect Gmail to create a provider-side draft. <a href="{{ path('app_outreach') }}">Open email setup</a>.</p>
+            {% else %}
+                <form method="post" action="{{ path('app_outreach_create_draft', {id: prospect.id}) }}" class="auth-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('create_outreach_draft_' ~ prospect.id) }}">
+                    <label for="outreach-recipient">Recipient email</label><input id="outreach-recipient" name="recipient" type="email" maxlength="180" autocomplete="email" required>
+                    <label for="outreach-subject">Subject</label><input id="outreach-subject" name="subject" type="text" maxlength="900" required value="A question for {{ prospect.name }}">
+                    <label for="outreach-body">Message</label><textarea id="outreach-body" name="body" rows="7" maxlength="20000" required placeholder="Write and review the message you want saved as a Gmail draft."></textarea>
+                    <label class="source-option" for="contact-checked"><input id="contact-checked" type="checkbox" name="contact_checked" value="1" required><span><strong>I checked this recipient and have a valid basis to contact them.</strong><small>I will review the Gmail draft before deciding whether to send it.</small></span></label>
+                    <button class="button button-primary" type="submit">Create Gmail draft</button>
+                    <p class="integration-disclosure">Creating a Gmail draft is an external account change. The app records who created it, the recipient, subject and provider draft ID. Message body stays in Gmail. Sending is not available in ProspectOS.</p>
+                </form>
+            {% endif %}
+        </section>
+
         <section class="panel evidence-panel" aria-labelledby="evidence-title">
             <div class="panel-heading"><div><h2 id="evidence-title">Sources and findings</h2><p>Only saved source material is shown here. Review each page before relying on it.</p></div><span class="evidence-count">{{ evidence|length }} {{ evidence|length == 1 ? 'item' : 'items' }}</span></div>
             {% if evidence is empty %}

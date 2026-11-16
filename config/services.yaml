@@ -7,8 +7,12 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    env(OUTBOUND_EMAIL_PAUSED): '1'
 
 services:
+    App\Service\Mail\EmailTransportInterface: '@App\Service\Mail\SmtpSender'
+    App\Service\Mail\BusinessMailboxInterface: '@App\Service\Mail\BusinessMailbox'
+    App\Service\Mail\GmailGatewayInterface: '@App\Service\GmailOutreachProvider'
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
@@ -18,6 +22,10 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/Service/Mail/PinnedImapStream.php'
+            - '../src/Service/Mail/AuthenticatedSmtpTransport.php'
+            - '../src/Service/Court/CaseFileTools.php'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -1,0 +1,143 @@
+/* Evidence Court: advocate (blue), skeptic (amber), struck claims (red), human judge (neutral). */
+:root {
+    --court-for: #0a66d6;
+    --court-for-soft: #e8f1fd;
+    --court-against: #b45309;
+    --court-against-soft: #fdf3e7;
+    --court-struck: #c4161c;
+    --court-struck-soft: #fdecec;
+    --court-ok: #1e7f3c;
+    --court-ok-soft: #e7f5ec;
+}
+:root[data-theme="dark"] {
+    --court-for: #5aa2ff;
+    --court-for-soft: #1d2f47;
+    --court-against: #f0a64a;
+    --court-against-soft: #3a2a17;
+    --court-struck: #ff6b6b;
+    --court-struck-soft: #3b1f21;
+    --court-ok: #4cc777;
+    --court-ok-soft: #1c3424;
+}
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.court-heading h1 { max-width: 760px; }
+.court-status-pending { background: var(--accent-soft); color: var(--accent-color); }
+.court-status-argued { background: var(--court-against-soft); color: var(--court-against); }
+.court-status-ruled { background: var(--court-ok-soft); color: var(--court-ok); }
+.court-status-failed { background: var(--court-struck-soft); color: var(--court-struck); }
+
+/* Pending and failure states */
+.court-pending, .court-failed, .court-setup { display: flex; gap: 18px; align-items: center; padding: 24px; }
+.court-pending h2, .court-failed h2, .court-setup h2 { margin: 0 0 4px; font-size: 18px; }
+.court-pending p, .court-failed p, .court-setup p { margin: 0; color: var(--subtle); line-height: 1.5; }
+.court-failed { flex-direction: column; align-items: flex-start; }
+.court-setup { justify-content: space-between; margin-bottom: 18px; }
+.court-spinner { flex: none; width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--accent-color); border-radius: 50%; animation: court-spin 0.9s linear infinite; }
+@keyframes court-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .court-spinner { animation-duration: 3s; } }
+
+/* Scale of admitted claims */
+.court-scale-panel { padding: 18px 20px; margin-bottom: 18px; }
+.court-scale-labels { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; }
+.court-scale-labels span:first-child { color: var(--court-for); }
+.court-scale-labels span:last-child { color: var(--court-against); }
+.court-scale { display: flex; gap: 3px; height: 12px; margin: 8px 0 10px; border-radius: 99px; overflow: hidden; }
+.court-scale-for { flex-basis: 0; background: var(--court-for); }
+.court-scale-against { flex-basis: 0; background: var(--court-against); }
+.court-scale-note { margin: 0; color: var(--subtle); font-size: 13px; line-height: 1.5; }
+
+/* The bench: two counsel side by side */
+.court-bench { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-bottom: 18px; }
+.court-counsel { min-width: 0; padding: 20px; border: 1px solid var(--border); border-top: 4px solid var(--court-for); border-radius: var(--radius-card); background: var(--surface); }
+.court-skeptic { border-top-color: var(--court-against); }
+.court-counsel-head { display: flex; gap: 12px; align-items: flex-start; }
+.court-counsel-head h2 { margin: 0; font-size: 18px; }
+.court-counsel-head p { margin: 2px 0 0; color: var(--subtle); font-size: 13px; }
+.court-counsel-head > div { flex: 1; min-width: 0; }
+.court-avatar { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--court-for-soft); color: var(--court-for); font-weight: 700; }
+.court-skeptic .court-avatar { background: var(--court-against-soft); color: var(--court-against); }
+.court-avatar-judge { background: var(--court-ok-soft); color: var(--court-ok); }
+.court-tally { flex: none; font-size: 24px; font-weight: 700; line-height: 1; color: var(--court-for); text-align: right; }
+.court-skeptic .court-tally { color: var(--court-against); }
+.court-tally small { display: block; margin-top: 3px; color: var(--subtle); font-size: 11px; font-weight: 500; }
+
+.court-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 14px 0 4px; font-size: 12px; }
+.court-tools-label { color: var(--subtle); font-weight: 600; margin-right: 2px; }
+.court-tools code { padding: 2px 7px; border: 1px solid var(--border); border-radius: 6px; background: var(--muted); font-size: 12px; }
+.court-tools-none { color: var(--subtle); }
+
+.court-claims { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+.court-claim { padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--court-ok); border-radius: 10px; background: var(--surface); }
+.court-claim.is-precedent { border-left-color: var(--accent-color); }
+.court-claim.is-struck { border-left-color: var(--court-struck); background: var(--court-struck-soft); }
+.court-claim.is-struck .court-claim-text { text-decoration: line-through; text-decoration-thickness: 1.5px; color: var(--subtle); }
+.court-ruling-badge { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--court-ok); }
+.court-claim.is-precedent .court-ruling-badge { color: var(--accent-color); }
+.court-claim.is-struck .court-ruling-badge { color: var(--court-struck); }
+.court-claim-text { margin: 6px 0 8px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.court-claim-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+.court-cite { padding: 1px 7px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-color); font-weight: 700; text-decoration: none; }
+.court-claim.is-struck .court-cite { background: transparent; border: 1px solid var(--court-struck); color: var(--court-struck); }
+.court-read { padding: 1px 7px; border-radius: 99px; background: var(--court-ok-soft); color: var(--court-ok); font-weight: 600; }
+.court-note { color: var(--subtle); }
+
+/* Judge */
+.court-judge { padding: 22px; margin-bottom: 18px; }
+.court-ruling-form { display: grid; gap: 10px; }
+.court-ruling-form label[for] { margin-top: 6px; font-size: 14px; font-weight: 600; }
+.court-ruling-form label span { color: var(--subtle); font-weight: 400; font-size: 12px; margin-left: 4px; }
+.court-ruling-form textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--ink); font: inherit; }
+.court-ruling-form .button { justify-self: start; min-height: 44px; }
+.court-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; border: 0; }
+.court-choice { position: relative; }
+.court-choice input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.court-choice span { display: flex; gap: 6px; justify-content: center; align-items: center; min-height: 48px; padding: 0 12px; border: 1.5px solid var(--border); border-radius: var(--radius-control); font-weight: 600; cursor: pointer; }
+.court-choice input:focus-visible + span { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+.court-choice-pursue input:checked + span { border-color: var(--court-ok); background: var(--court-ok-soft); color: var(--court-ok); }
+.court-choice-more input:checked + span { border-color: var(--accent-color); background: var(--accent-soft); color: var(--accent-color); }
+.court-choice-reject input:checked + span { border-color: var(--court-struck); background: var(--court-struck-soft); color: var(--court-struck); }
+.court-verdict { display: flex; gap: 14px; align-items: flex-start; }
+.court-verdict h2 { margin: 0 0 4px; font-size: 20px; }
+.court-verdict p { margin: 0 0 6px; line-height: 1.5; }
+.court-verdict small { color: var(--subtle); }
+
+.court-explainer { padding: 16px 20px; margin-bottom: 18px; }
+.court-explainer summary { cursor: pointer; font-weight: 600; }
+.court-explainer ol { margin: 12px 0 0; padding-left: 20px; line-height: 1.6; color: var(--subtle); }
+.court-explainer strong { color: var(--ink); }
+.court-footer { margin: 0 0 24px; color: var(--subtle); font-size: 12px; }
+
+/* Index */
+.court-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 18px; padding: 0; list-style: none; }
+.court-steps li { display: grid; gap: 2px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+.court-steps span { display: grid; place-items: center; width: 26px; height: 26px; margin-bottom: 6px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-color); font-size: 13px; font-weight: 700; }
+.court-steps small { color: var(--subtle); line-height: 1.4; }
+.court-index-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.court-docket { display: grid; margin: 0; padding: 0; list-style: none; }
+.court-docket li { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border); }
+.court-docket li:first-child { border-top: 0; }
+.court-docket li > div { min-width: 0; }
+.court-docket a { color: var(--ink); text-decoration: none; }
+.court-docket a:hover strong { color: var(--accent-color); }
+.court-docket small { display: block; margin-top: 2px; color: var(--subtle); font-size: 12px; }
+.court-docket .button { flex: none; display: inline-flex; gap: 6px; align-items: center; min-height: 40px; white-space: nowrap; }
+
+/* Prospect report call-to-action */
+.court-cta { display: flex; gap: 16px; align-items: center; justify-content: space-between; padding: 18px 20px; border-left: 4px solid var(--court-for); }
+.court-cta h2 { margin: 0 0 4px; font-size: 17px; }
+.court-cta p { margin: 0; color: var(--subtle); font-size: 13px; line-height: 1.5; }
+.court-cta .button { flex: none; display: inline-flex; gap: 6px; align-items: center; min-height: 44px; white-space: nowrap; }
+
+@media (max-width: 900px) {
+    .court-bench, .court-index-grid { grid-template-columns: 1fr; }
+    .court-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .court-choices { grid-template-columns: 1fr; }
+    .court-cta, .court-setup { flex-direction: column; align-items: stretch; }
+    .court-docket li { flex-direction: column; align-items: stretch; }
+    .court-ruling-form .button { justify-self: stretch; }
+}
+.court-status { white-space: nowrap; text-transform: none; }

@@ -33,9 +33,10 @@
         <article class="panel integration-card">
             <div class="integration-symbol integration-symbol-ai" aria-hidden="true">✳</div>
             <div class="integration-copy">
-                <div class="integration-title"><h2>AI research</h2><span class="connection-status {{ aiConfigured ? 'is-pending' : 'is-missing' }}">{{ aiConfigured ? 'Configured · test required' : (aiEnabled ? 'Selected provider not configured' : 'AI disabled') }}</span></div>
-                {% if aiConfigured %}<p>{{ aiProvider }} · {{ aiTier }}.</p>{% elseif aiEnabled %}<p>{{ aiProvider }} is selected, but its endpoint/model or credentials are incomplete. AI analysis stays unavailable until configuration passes validation.</p>{% else %}<p>AI is off. Choose a provider explicitly in the ignored local environment to enable analysis.</p>{% endif %}
+                <div class="integration-title"><h2>AI research</h2><span class="connection-status {{ aiReady ? 'is-configured' : (aiConfigured ? 'is-pending' : 'is-missing') }}">{{ aiReady ? 'Connected · test passed' : (aiConfigured ? 'Saved · test required' : (aiEnabled ? 'Setup incomplete' : 'AI disabled')) }}</span></div>
+                {% if aiConfigured %}<p>{{ aiProvider }} · {{ aiTier }}.</p>{% elseif aiEnabled %}<p>{{ aiProvider }} is selected, but its endpoint/model or credentials are incomplete. AI analysis stays unavailable until configuration passes validation.</p>{% else %}<p>AI is off. Set up a cloud provider or connect a local Ollama model for this workspace.</p>{% endif %}
                 <p class="integration-meta">Configured model: <code>{{ aiModel }}</code></p>
+                <p class="integration-meta"><a href="{{ path('app_integrations_ai') }}">Configure AI provider</a></p>
                 {% if aiConfigured %}
                     <form method="post" action="{{ path('app_integrations') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('test_search') }}">
@@ -44,7 +45,7 @@
                     </form>
                     <p class="integration-disclosure">{{ aiDisclosure }}</p>
                 {% else %}
-                    <p class="integration-meta">Available providers: <code>ollama</code>, <code>gemini</code>, <code>huggingface</code> or <code>openai-compatible</code>. Set <code>AI_PROVIDER=disabled</code> to keep AI off.</p>
+                    <p class="integration-meta">Choose Gemini, OpenAI, Groq, OpenRouter, Hugging Face, or local Ollama. API keys are encrypted in this workspace and never shown again.</p>
                 {% endif %}
             </div>
         </article>
@@ -52,9 +53,9 @@
         <article class="panel integration-card">
             <div class="integration-symbol integration-symbol-mail" aria-hidden="true">✉</div>
             <div class="integration-copy">
-                <div class="integration-title"><h2>Email</h2><span class="connection-status is-missing">{{ mailConfigured|default(false) ? 'Configured · not tested' : 'Mailbox key required' }}</span></div>
-                <p>MailOS inbox sync reads up to 25 recent message headers and thread state. Bodies and attachments stay in MailOS. Sending is not enabled in ProspectOS.</p>
-                <p class="integration-meta"><a href="{{ path('app_inbox') }}">Open inbox setup</a>. MailOS needs a separate read-only API scope before ProspectOS can connect safely.</p>
+                <div class="integration-title"><h2>Gmail outreach</h2><span class="connection-status {{ gmailConnection ? 'is-configured' : 'is-missing' }}">{{ gmailConnection ? 'Connected · draft only' : 'Not connected' }}</span></div>
+                <p>Gmail supports recent inbox reads and drafts for review in Gmail. Standard IMAP/SMTP mailbox setup supports inbox reads and approved test sends.</p>
+                <p class="integration-meta"><a href="{{ path('app_outreach') }}">Open email setup</a>. Google OAuth client setup and Gmail API access are required.</p>
             </div>
         </article>
     </section>

@@ -1,0 +1,6 @@
+framework:
+    rate_limiter:
+        mailbox:
+            policy: fixed_window
+            limit: 30
+            interval: '1 hour'

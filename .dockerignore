@@ -2,9 +2,12 @@
 .tools
 .scaffold
 .kit-extract
+.env
 .env.local
 .env.*.local
 .env.dev
 var
 vendor
 node_modules
+.phpunit.cache
+phpunit.xml
