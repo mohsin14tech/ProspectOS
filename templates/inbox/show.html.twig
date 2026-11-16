@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ message.metadata.subject ?: 'Email message' }}{% endblock %}
+{% block breadcrumb %}Email / Message{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/mail.css') }}">{% endblock %}
+{% block body %}
+<div class="page-heading"><div><a href="{{ path('app_inbox') }}">Back to inbox</a><h1>{{ message.metadata.subject ?: '(No subject)' }}</h1><p class="page-subtitle">{{ message.metadata.sender }} · {{ message.metadata.date }}</p></div></div>
+{% include 'outreach/_flashes.html.twig' %}
+<section class="panel mail-panel"><h2>Message</h2><p class="mail-note">Mail is untrusted content. Plain text only; remote images, HTML and attachments are not displayed.</p>
+{% if message.body is not null %}<pre class="mail-body">{{ message.body }}</pre>{% else %}<p>{{ message.metadata.preview }}</p><form method="post" action="{{ path('app_inbox_body', {id: message.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('mail_body_' ~ message.id) }}"><button class="button button-primary" data-turbo-submits-with="Loading message…">Load plain-text message</button></form><p class="mail-note">Up to 20,000 characters will be cached in this workspace. Large messages must be opened in your mail provider.</p>{% endif %}
+</section>
+{% if message.gmailConnection and message.gmailConnection.inboxAccess %}
+<details class="panel mail-panel"><summary>Prepare a Gmail reply draft</summary><p>Check the sender and type the correct recipient yourself. A displayed sender can be spoofed. The draft is created in Gmail for review and manual sending.</p>
+<form method="post" action="{{ path('app_inbox_reply', {id: message.id}) }}" class="mail-form">
+<input type="hidden" name="_token" value="{{ csrf_token('mail_reply_' ~ message.id) }}">
+<div><label for="reply-to">Verified recipient (required)</label><input type="email" id="reply-to" name="recipient" required maxlength="180"></div>
+<div><label for="reply-subject">Subject (required)</label><input id="reply-subject" name="subject" maxlength="200" required value="{{ (message.metadata.subject starts with 'Re:' ? message.metadata.subject : 'Re: ' ~ message.metadata.subject)|slice(0, 200) }}"><small>Keep the original subject for Gmail threading.</small></div>
+<div><label for="reply-body">Reply (required)</label><textarea id="reply-body" name="body" rows="6" required maxlength="20000"></textarea></div>
+<label class="mail-check"><input type="checkbox" name="contact_checked" value="1" required><span>I checked the recipient and have a valid basis to reply.</span></label>
+<button class="button button-secondary" data-turbo-submits-with="Creating draft…">Create Gmail reply draft</button>
+</form></details>
+{% else %}<section class="panel mail-panel"><h2>Reply in your mail provider</h2><p>IMAP messages are read-only in this release. Use your regular mail app to reply. ProspectOS SMTP currently sends approved tests only.</p></section>{% endif %}
+{% if drafts is not empty %}<section class="panel mail-panel"><h2>Reply drafts created</h2>{% for draft in drafts %}<p>{{ draft.recipient }} · {{ draft.subject }} · {{ draft.createdAt|date('d M Y, H:i') }} · Draft only</p>{% endfor %}</section>{% endif %}
+{% endblock %}

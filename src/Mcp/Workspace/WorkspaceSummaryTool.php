@@ -29,6 +29,7 @@ final class WorkspaceSummaryTool
                 'name' => $prospect['name'],
                 'category' => $prospect['category'],
                 'location' => $prospect['location'],
+                'status' => $prospect['status'],
                 'score' => $prospect['score'],
                 'latest_evidence' => $prospect['signal'],
             ], $dashboard['prospects']),

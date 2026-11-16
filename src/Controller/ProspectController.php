@@ -6,9 +6,12 @@ namespace App\Controller;
 
 use App\Entity\EvidenceItem;
 use App\Entity\EvidenceSummary;
+use App\Entity\GmailConnection;
 use App\Entity\Prospect;
 use App\Entity\ScoreSnapshot;
+use App\Entity\ProspectDecision;
 use App\Service\CurrentWorkspaceProvider;
+use App\Service\ProspectMemory;
 use App\Service\EvidenceSummaryGenerator;
 use App\Service\AiProviderConfiguration;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,7 +24,7 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 final class ProspectController extends AbstractController
 {
     #[Route('/prospects/{id}', name: 'app_prospect_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
-    public function show(int $id, EntityManagerInterface $entityManager, CurrentWorkspaceProvider $workspaceProvider, AiProviderConfiguration $ai): Response
+    public function show(int $id, EntityManagerInterface $entityManager, CurrentWorkspaceProvider $workspaceProvider, AiProviderConfiguration $ai, ProspectMemory $memory): Response
     {
         $workspace = $workspaceProvider->get();
         $prospect = $entityManager->getRepository(Prospect::class)->findOneBy([
@@ -39,7 +42,7 @@ final class ProspectController extends AbstractController
             50,
         );
         $score = $entityManager->getRepository(ScoreSnapshot::class)->findOneBy(
-            ['workspace' => $workspace, 'prospect' => $prospect],
+            ['workspace' => $workspace, 'prospect' => $prospect, 'researchRun' => $prospect->getResearchRun()],
             ['createdAt' => 'DESC'],
         );
         $summary = $entityManager->getRepository(EvidenceSummary::class)->findOneBy(
@@ -53,11 +56,14 @@ final class ProspectController extends AbstractController
             'evidence' => $evidence,
             'score' => $score,
             'summary' => $summary,
-            'aiConfigured' => $ai->isConfigured(),
-            'aiProvider' => $ai->providerName(),
-            'aiModel' => $ai->modelName(),
-            'aiTier' => $ai->tierLabel(),
-            'aiDisclosure' => $ai->dataDisclosure(),
+            'decisions' => $entityManager->getRepository(ProspectDecision::class)->findBy(['workspace' => $workspace, 'prospect' => $prospect], ['createdAt' => 'DESC'], 20),
+            'memoryExamples' => $memory->relevantDecisions($workspace, $prospect),
+            'gmailConnection' => $entityManager->getRepository(GmailConnection::class)->findOneBy(['workspace' => $workspace]),
+            'aiConfigured' => $ai->isReady($workspace),
+            'aiProvider' => $ai->providerName($workspace),
+            'aiModel' => $ai->modelName($workspace),
+            'aiTier' => $ai->tierLabel($workspace),
+            'aiDisclosure' => $ai->dataDisclosure($workspace),
         ]);
     }
 
@@ -68,6 +74,7 @@ final class ProspectController extends AbstractController
         EntityManagerInterface $entityManager,
         CurrentWorkspaceProvider $workspaceProvider,
         EvidenceSummaryGenerator $generator,
+        ProspectMemory $memory,
         RateLimiterFactory $aiSummaryLimiter,
         AiProviderConfiguration $ai,
     ): Response {
@@ -81,8 +88,8 @@ final class ProspectController extends AbstractController
 
             return $this->redirectToRoute('app_prospect_show', ['id' => $id]);
         }
-        if (!$ai->isConfigured()) {
-            $this->addFlash('error', 'AI analysis is unavailable while AI is disabled or the selected provider is not configured.');
+        if (!$ai->isReady($workspace)) {
+            $this->addFlash('error', 'Configure and successfully test an AI provider in Integrations before generating a summary.');
 
             return $this->redirectToRoute('app_prospect_show', ['id' => $id]);
         }
@@ -105,13 +112,19 @@ final class ProspectController extends AbstractController
         }
 
         try {
-            $text = $generator->generate($prospect->getName(), $prospect->getResearchRun()->getObjective(), $evidence);
+            $text = $generator->generate(
+                $prospect->getName(),
+                $prospect->getResearchRun()->getObjective(),
+                $evidence,
+                $workspace,
+                $memory->relevantDecisions($workspace, $prospect),
+            );
             $entityManager->persist(new EvidenceSummary(
                 $workspace,
                 $prospect,
                 array_values(array_filter(array_map(static fn (EvidenceItem $item): ?int => $item->getId(), $evidence))),
-                $generator->providerName(),
-                $generator->modelName(),
+                $generator->providerName($workspace),
+                $generator->modelName($workspace),
                 $text,
             ));
             $entityManager->flush();

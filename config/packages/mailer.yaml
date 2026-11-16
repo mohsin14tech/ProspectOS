@@ -1,0 +1,4 @@
+framework:
+    mailer:
+        # Workspace SMTP connections use an explicit transport after approval.
+        dsn: 'null://null'

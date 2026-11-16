@@ -57,7 +57,7 @@ final class ProspectReportTest extends WebTestCase
         self::assertNotSame($foreignProspect->getId(), $privateProspect->getId());
     }
 
-    public function testAnalysisIsUnavailableWithoutHuggingFaceToken(): void
+    public function testAnalysisIsUnavailableUntilProviderIsConfiguredAndTested(): void
     {
         $client = static::createClient();
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -73,7 +73,7 @@ final class ProspectReportTest extends WebTestCase
 
         self::assertResponseRedirects('/prospects/'.$prospect->getId());
         $client->followRedirect();
-        self::assertSelectorTextContains('.flash-error', 'AI is disabled');
+        self::assertSelectorTextContains('.flash-error', 'Configure and successfully test an AI provider');
         self::assertSame(0, $entityManager->getRepository(EvidenceSummary::class)->count([]));
     }
 

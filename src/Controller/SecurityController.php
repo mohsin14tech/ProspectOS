@@ -9,6 +9,7 @@ use App\Entity\GoogleIdentity;
 use App\Entity\Workspace;
 use App\Entity\WorkspaceMembership;
 use App\Service\CurrentWorkspaceProvider;
+use App\Service\DemoLogin;
 use App\Service\GoogleOidcClient;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,7 +25,7 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 final class SecurityController extends AbstractController
 {
     #[Route('/login', name: 'app_login', methods: ['GET', 'POST'])]
-    public function login(AuthenticationUtils $authenticationUtils, EntityManagerInterface $entityManager, GoogleOidcClient $googleOidc, #[Autowire(env: 'string:APP_OWNER_SETUP_TOKEN')] string $ownerSetupToken): Response
+    public function login(AuthenticationUtils $authenticationUtils, EntityManagerInterface $entityManager, GoogleOidcClient $googleOidc, DemoLogin $demoLogin, #[Autowire(env: 'string:APP_OWNER_SETUP_TOKEN')] string $ownerSetupToken): Response
     {
         if ($this->getUser() instanceof User) {
             return $this->redirectToRoute('app_dashboard');
@@ -33,7 +34,9 @@ final class SecurityController extends AbstractController
         return $this->render('security/login.html.twig', [
             'lastUsername' => $authenticationUtils->getLastUsername(),
             'error' => $authenticationUtils->getLastAuthenticationError(),
-            'hasUsers' => $entityManager->getRepository(User::class)->count([]) > 0,
+            'hasUsers' => $demoLogin->countRealUsers() > 0,
+            'demoEmail' => $demoLogin->isEnabled() ? DemoLogin::EMAIL : null,
+            'demoPassword' => $demoLogin->password(),
             'ownerSetupAvailable' => '' !== trim($ownerSetupToken),
             'googleSignInConfigured' => $googleOidc->isConfigured(),
         ]);
@@ -46,8 +49,9 @@ final class SecurityController extends AbstractController
         UserPasswordHasherInterface $passwordHasher,
         #[Autowire(env: 'string:APP_OWNER_SETUP_TOKEN')] string $ownerSetupToken,
         RateLimiterFactory $ownerSetupLimiter,
+        DemoLogin $demoLogin,
     ): Response {
-        if ($entityManager->getRepository(User::class)->count([]) > 0 || '' === trim($ownerSetupToken)) {
+        if ($demoLogin->countRealUsers() > 0 || '' === trim($ownerSetupToken)) {
             return $this->redirectToRoute('app_login');
         }
 
@@ -85,10 +89,10 @@ final class SecurityController extends AbstractController
                 $workspace = new Workspace($workspaceName, 'workspace-'.bin2hex(random_bytes(8)));
                 $membership = new WorkspaceMembership($workspace, $owner, WorkspaceMembership::ROLE_OWNER);
 
-                $created = $entityManager->getConnection()->transactional(function (Connection $connection) use ($entityManager, $owner, $workspace, $membership): bool {
+                $created = $entityManager->getConnection()->transactional(function (Connection $connection) use ($entityManager, $demoLogin, $owner, $workspace, $membership): bool {
                     // Serialize first-owner setup so concurrent first registrations cannot both become owners.
                     $connection->executeQuery('SELECT pg_advisory_xact_lock(148903207)');
-                    if ($entityManager->getRepository(User::class)->count([]) > 0) {
+                    if ($demoLogin->countRealUsers() > 0) {
                         return false;
                     }
 

@@ -1,15 +1,21 @@
 # Deployment
 
+## Mailbox deployment additions — 2026-11-15
+
+Deploy migration `Version20261115160000` (13 total), then run `messenger:setup-transports` before schema validation on a fresh database. Keep `OUTBOUND_EMAIL_PAUSED=1` until a controlled test is ready. Configure Gmail OAuth as private runtime secrets; enter standard mailbox credentials in the owner/admin UI. Preserve `APP_SECRET` or reconnect all encrypted providers after rotation. Outbound mailbox TLS uses 993 and 465/587. No PHP IMAP extension is required.
+
+Docker now excludes the local `.env`; a full local build and fresh-database setup passed. Upsun hosted build, domain, credentials, worker and provider operations remain pending account verification. Local Docker-host Ollama is not a production endpoint. See [MAIL.md](MAIL.md) and [RELEASE_AUDIT.md](RELEASE_AUDIT.md).
+
 ## Local
 
-The current local stack is defined in `compose.yaml` and includes PHP 8.4, PostgreSQL 16, Redis 7 and a Messenger worker:
+The current local stack is defined in `compose.yaml` and includes PHP 8.4, PostgreSQL 16, SearXNG and a Messenger worker. The web app binds to localhost; PostgreSQL and SearXNG are private to the Compose network:
 
 ```powershell
 docker compose up --build -d
 docker compose ps
 ```
 
-Compose applies Doctrine migrations and idempotently seeds the synthetic demo workspace on startup. Open <http://127.0.0.1:8000>. Stop the local services with `docker compose down`; named database and cache volumes are retained.
+Compose applies Doctrine migrations and idempotently seeds the synthetic demo workspace on startup. Open <http://127.0.0.1:8000>. Stop the local services with `docker compose down`; named database and app volumes are retained.
 
 Production configuration is prepared in `.platform.app.yaml`, `.platform/services.yaml`, `.platform/routes.yaml`, and `.environment`. It targets PHP 8.4 and PostgreSQL 16, builds locked Composer dependencies and Tailwind assets, runs Doctrine migrations and Messenger transport setup, and starts a separate Messenger worker. `.environment` reads `APP_SECRET` from Upsun project entropy, `DATABASE_URL` from the database relationship, and `DEFAULT_URI` from the primary route; no credentials are committed. The `/mcp` path is blocked at the web router until the endpoint has an approved public authentication design.
 
@@ -21,7 +27,7 @@ Upsun remains the selected production target. After account verification and pro
 
 ## Environment variables
 
-Configure production credentials and values in Upsun's sensitive environment variables rather than committing them. Set a random `APP_OWNER_SETUP_TOKEN` only for initial owner provisioning and remove it after the owner is created. Do not save account passwords in this repository. AI remains disabled; enabling it requires an explicit provider/model choice, data disclosure and current billing/data-term review. Google OIDC requires `GOOGLE_OIDC_CLIENT_ID`, `GOOGLE_OIDC_CLIENT_SECRET`, and an exact `GOOGLE_OIDC_REDIRECT_URI` matching the assigned domain, followed by a real linked-account test. Do not point production at a developer's desktop Ollama endpoint. MailOS remains disconnected because its JMAP credential also permits submission; no sending flow is implemented. GitHub Actions is green on run [43669837591](https://github.com/mohsin14tech/ProspectOS/actions/runs/43669837591). No Upsun project, production domain or live provider connection is verified yet.
+Configure production credentials and values in Upsun's sensitive environment variables rather than committing them. Set a random `APP_OWNER_SETUP_TOKEN` only for initial owner provisioning and remove it after the owner is created. AI remains disabled until an explicit provider/model is approved and tested. Google OIDC and Gmail outreach each require OAuth setup; Gmail additionally requires the Gmail API, an exact `/outreach/gmail/callback` URI, consent-screen configuration and possibly scope verification. Do not point production at a developer's desktop Ollama endpoint. Gmail draft creation is not sending; no send operation is implemented. No Upsun project, production domain or live provider connection is verified yet.
 
 ## Current Upsun configuration
 

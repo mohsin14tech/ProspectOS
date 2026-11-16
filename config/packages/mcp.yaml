@@ -6,7 +6,7 @@ mcp:
                 stdio: true
                 http: false
             registry:
-                tools: ['App\Mcp\DemoWorkspaceSummaryTool']
+                tools: ['App\Mcp\DemoWorkspaceSummaryTool', 'App\Mcp\Demo\']
         workspace:
             name: 'ProspectOS Workspace'
             transports:

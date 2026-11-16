@@ -6,6 +6,7 @@ namespace App\Mcp\Workspace;
 
 use App\Entity\EvidenceItem;
 use App\Entity\Prospect;
+use App\Entity\ProspectDecision;
 use App\Entity\ScoreSnapshot;
 use App\Service\CurrentWorkspaceProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -50,8 +51,20 @@ final class ProspectReportTool
                 'category' => $prospect->getCategory(),
                 'location' => $prospect->getLocation(),
                 'source_mode' => $prospect->getSourceMode(),
+                'canonical_domain' => $prospect->getCanonicalDomain(),
+                'status' => $prospect->getStatus(),
                 'research_objective' => $prospect->getResearchRun()->getObjective(),
             ],
+            'decision_history' => array_map(static fn (ProspectDecision $decision): array => [
+                'decision' => $decision->getDecision(),
+                'reason' => $decision->getReason(),
+                'actor' => $decision->getActor()->getEmail(),
+                'created_at' => $decision->getCreatedAt()->format(DATE_ATOM),
+            ], $this->entityManager->getRepository(ProspectDecision::class)->findBy(
+                ['workspace' => $workspace, 'prospect' => $prospect],
+                ['createdAt' => 'DESC'],
+                20,
+            )),
             'score' => $score === null ? null : [
                 'value' => $score->getScore(),
                 'coverage' => $score->getCoverage(),

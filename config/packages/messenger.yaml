@@ -6,3 +6,4 @@ framework:
 
         routing:
             App\Message\ProcessResearchRun: async
+            App\Message\HearCourtCase: async

@@ -4,3 +4,4 @@ ai:
             default:
                 base_url: '%env(AI_BASE_URL)%'
                 api_key: '%env(AI_API_KEY)%'
+                completions_path: /chat/completions

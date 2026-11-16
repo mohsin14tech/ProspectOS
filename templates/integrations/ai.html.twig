@@ -1,0 +1,154 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Research copilot{% endblock %}
+{% block breadcrumb %}Research copilot{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/ai-settings.css') }}">{% endblock %}
+
+{% block body %}
+    <header class="ai-page-heading">
+        <div>
+            <p class="ai-kicker"><span class="ai-kicker-mark" aria-hidden="true">P</span> ProspectOS research copilot</p>
+            <h1>Choose where your research runs.</h1>
+            <p class="page-subtitle">Keep provider connections saved and choose which one handles evidence summaries in {{ workspace.name }}.</p>
+        </div>
+        <a class="ai-back-link" href="{{ path('app_integrations') }}">All integrations</a>
+    </header>
+
+    {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+    {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+
+    {% set currentStep = ready ? 3 : (configured ? 2 : 1) %}
+    <ol class="ai-progress" aria-label="Provider setup progress">
+        <li class="{{ currentStep >= 1 ? 'is-complete' : '' }}"><span class="ai-progress-marker">{% if currentStep > 1 %}✓{% else %}1{% endif %}</span><span><strong>Choose a route</strong><small>Local or cloud</small></span></li>
+        <li class="{{ currentStep >= 2 ? 'is-complete' : '' }}"><span class="ai-progress-marker">{% if currentStep > 2 %}✓{% else %}2{% endif %}</span><span><strong>Save the model</strong><small>Model ID and key</small></span></li>
+        <li class="{{ currentStep >= 3 ? 'is-complete' : '' }}"><span class="ai-progress-marker">{% if currentStep >= 3 %}✓{% else %}3{% endif %}</span><span><strong>Verify the route</strong><small>One short test prompt</small></span></li>
+    </ol>
+
+    <section class="ai-config-panel ai-connections-panel" aria-labelledby="ai-connections-title">
+        <div class="ai-config-topline"><div><span class="ai-step-label">SAVED CONNECTIONS</span><h2 id="ai-connections-title">Provider routes</h2></div></div>
+        {% if connections is empty %}<p class="ai-field-help">No saved provider connections yet. Add one below.</p>
+        {% else %}<ul class="ai-connection-list">
+            {% for row in connections %}{% set connection = row.setting %}<li>
+                <div class="ai-connection-copy"><strong>{{ row.name }}</strong><span>{{ connection.model }} · {% if connection.active %}Active{% elseif row.configured %}Saved{% else %}Needs setup{% endif %}{% if connection.testedAt %} · tested {{ connection.testedAt|date('M j, Y · H:i') }}{% elseif row.configured %} · test needed{% endif %}</span></div>
+                <div class="ai-connection-actions">
+                    {% if row.configured %}<form method="post" action="{{ path('app_integrations_ai') }}"><input type="hidden" name="_token" value="{{ csrf_token('ai_provider_settings') }}"><input type="hidden" name="action" value="test"><input type="hidden" name="provider" value="{{ connection.provider }}"><button class="button button-secondary" type="submit">Test</button></form>{% endif %}
+                    {% if not connection.active %}<form method="post" action="{{ path('app_integrations_ai') }}"><input type="hidden" name="_token" value="{{ csrf_token('ai_provider_settings') }}"><input type="hidden" name="action" value="activate"><input type="hidden" name="provider" value="{{ connection.provider }}"><button class="button button-secondary" type="submit">Make active</button></form>{% endif %}
+                </div>
+            </li>{% endfor %}
+        </ul>{% endif %}
+    </section>
+
+    <div class="ai-connection-layout" data-controller="ai-provider">
+        <main class="ai-config-panel" aria-labelledby="ai-config-title">
+            <div class="ai-config-topline">
+                <div><span class="ai-step-label">STEP 1 / 3</span><h2 id="ai-config-title">Choose your model route</h2></div>
+                {% if formError %}<span class="ai-state-chip is-error"><span aria-hidden="true">!</span> Check setup</span>
+                {% elseif unsavedSelection %}<span class="ai-state-chip is-pending"><span aria-hidden="true">•</span> Unsaved choice</span>
+                {% elseif ready %}<span class="ai-state-chip is-ready"><span aria-hidden="true">✓</span> Verified</span>
+                {% elseif configured %}<span class="ai-state-chip is-pending"><span aria-hidden="true">•</span> Test needed</span>
+                {% else %}<span class="ai-state-chip is-off"><span aria-hidden="true">○</span> AI is off</span>{% endif %}
+            </div>
+
+            {% if formError %}
+                <div class="ai-form-error" role="alert" tabindex="-1">
+                    <span class="ai-error-icon" aria-hidden="true">!</span>
+                    <div><strong>We couldn’t save these settings.</strong><p>{{ formError }}{% if formErrorField == 'api_key' %} The key was not saved; enter it again after correcting this field.{% endif %}</p></div>
+                </div>
+            {% endif %}
+
+            <form method="post" action="{{ path('app_integrations_ai') }}" class="ai-settings-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('ai_provider_settings') }}">
+                <input type="hidden" name="action" value="save">
+
+                <div class="ai-field-group">
+                    <label for="ai-provider">Provider</label>
+                    <select id="ai-provider" name="provider" required data-ai-provider-target="provider" data-action="change->ai-provider#providerChanged" aria-describedby="ai-provider-help">
+                        <option value="disabled" data-name="AI off" data-kind="off" data-summary="Keep AI analysis turned off for this workspace." data-requires-key="false" data-saved-key="false" data-key-url="" {{ provider == 'disabled' ? 'selected' : '' }}>AI off</option>
+                        <optgroup label="Run it on your machine">
+                            {% set definition = providers.ollama %}<option value="ollama" data-name="{{ definition.name }}" data-kind="{{ definition.kind }}" data-summary="{{ definition.summary }}" data-requires-key="{{ definition.requiresKey ? 'true' : 'false' }}" data-saved-key="{{ savedProviders.ollama is defined ? 'true' : 'false' }}" data-saved-model="{{ savedConnectionData.ollama.model ?? '' }}" data-saved-endpoint="{{ savedConnectionData.ollama.localEndpoint ?? '' }}" data-key-url="{{ definition.keyUrl }}" {{ provider == 'ollama' ? 'selected' : '' }}>Ollama · local model</option>
+                        </optgroup>
+                        <optgroup label="Use a cloud model">
+                            {% for key, definition in providers %}{% if definition.kind == 'cloud' %}<option value="{{ key }}" data-name="{{ definition.name }}" data-kind="{{ definition.kind }}" data-summary="{{ definition.summary }}" data-requires-key="{{ definition.requiresKey ? 'true' : 'false' }}" data-saved-key="{{ savedProviders[key] is defined ? 'true' : 'false' }}" data-saved-model="{{ savedConnectionData[key].model ?? '' }}" data-saved-endpoint="{{ savedConnectionData[key].localEndpoint ?? '' }}" data-key-url="{{ definition.keyUrl }}" {{ provider == key ? 'selected' : '' }}>{{ definition.name }}</option>{% endif %}{% endfor %}
+                        </optgroup>
+                    </select>
+                    <p class="ai-field-help" id="ai-provider-help">Cloud sends research context to the provider. Ollama runs on a computer you control.</p>
+                </div>
+
+                <section class="ai-route-preview" aria-live="polite" aria-atomic="true">
+                    <div class="ai-route-from"><span class="ai-route-mark" aria-hidden="true">P</span><span><small>YOUR WORKSPACE</small><strong>{{ workspace.name }}</strong></span></div>
+                    <svg class="ai-route-arrow" viewBox="0 0 48 16" role="img" aria-label="routes to"><path d="M1 8h42m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    <div class="ai-route-to"><span class="ai-provider-monogram" data-ai-provider-target="routeKind" aria-hidden="true">{{ providerDefinition.kind == 'local' ? 'LOCAL' : (providerDefinition.kind == 'cloud' ? 'CLOUD' : 'OFF') }}</span><span><small>MODEL DESTINATION</small><strong data-ai-provider-target="routeName">{{ providerDefinition.name }}</strong></span></div>
+                    <p class="ai-route-summary" data-ai-provider-target="routeSummary">{{ providerDefinition.summary }}</p>
+                    <p class="ai-route-disclosure" data-ai-provider-target="routeDisclosure">{{ disclosure }}</p>
+                </section>
+
+                <div class="ai-form-grid">
+                    <div class="ai-field-group ai-model-field" data-ai-provider-target="modelField">
+                        <label for="ai-model" data-ai-provider-target="modelLabel">{{ provider == 'ollama' ? 'Installed model name' : 'Model ID' }}</label>
+                        <input id="ai-model" name="model" type="text" value="{{ model }}" maxlength="160" autocomplete="off" required data-ai-provider-target="model" aria-describedby="ai-model-help {{ formErrorField == 'model' ? 'ai-model-error' : '' }}" {{ formErrorField == 'model' ? 'aria-invalid="true" autofocus' : '' }}>
+                        <p class="ai-field-help" id="ai-model-help" data-ai-provider-target="modelHelp">{{ provider == 'ollama' ? 'Use the exact name shown by ollama list. ProspectOS will not download the model for you.' : 'Use the model ID shown in the selected provider account. Names and availability can change.' }}</p>
+                        {% if formErrorField == 'model' %}<p class="ai-inline-error" id="ai-model-error">{{ formError }}</p>{% endif %}
+                    </div>
+
+                    <div class="ai-field-group" data-ai-provider-target="apiKeyField" {{ providerRequiresKey ? '' : 'hidden' }}>
+                        <label for="ai-api-key">API key</label>
+                        <input id="ai-api-key" name="api_key" type="password" value="" maxlength="4096" autocomplete="new-password" spellcheck="false" data-ai-provider-target="apiKey" aria-describedby="ai-key-help {{ formErrorField == 'api_key' ? 'ai-key-error' : '' }}" {{ providerRequiresKey and not hasSavedKey ? 'required' : '' }} {{ formErrorField == 'api_key' ? 'aria-invalid="true" autofocus' : '' }}>
+                        <p class="ai-field-help" id="ai-key-help" data-ai-provider-target="keyHelp">{% if hasSavedKey %}A key is saved for this provider. Leave blank to keep it, or enter a replacement. The saved value is never shown.{% elseif providerRequiresKey %}Your key is encrypted before it is stored. It is sent only when you run the provider test or generate an AI summary.{% else %}Ollama needs no API key. Run the model server on your computer first.{% endif %}</p>
+                        <a class="ai-key-link" href="{{ providerDefinition.keyUrl ?? '#' }}" target="_blank" rel="noopener noreferrer" data-ai-provider-target="keyLink" {{ providerDefinition.keyUrl ? '' : 'hidden' }}>{{ providerDefinition.name }} key settings</a>
+                        {% if formErrorField == 'api_key' %}<p class="ai-inline-error" id="ai-key-error">{{ formError }}</p>{% endif %}
+                    </div>
+
+                    <div class="ai-field-group" data-ai-provider-target="localEndpointField" {{ provider == 'ollama' ? '' : 'hidden' }}>
+                        <label for="ai-local-endpoint">Ollama address</label>
+                        <input id="ai-local-endpoint" name="local_endpoint" type="url" value="{{ localEndpoint }}" maxlength="512" data-ai-provider-target="localEndpoint" aria-describedby="ai-local-help {{ formErrorField == 'local_endpoint' ? 'ai-local-error' : '' }}" {{ formErrorField == 'local_endpoint' ? 'aria-invalid="true" autofocus' : '' }}>
+                        <p class="ai-field-help" id="ai-local-help">Default for Docker Desktop: <code>http://host.docker.internal:11434/v1</code>. Remote addresses are rejected.</p>
+                        {% if formErrorField == 'local_endpoint' %}<p class="ai-inline-error" id="ai-local-error">{{ formError }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div class="ai-save-bar">
+                    <div><strong>Key protection</strong><span>Encrypted with APP_SECRET · editable only by workspace admins</span></div>
+                    <button class="button button-primary ai-save-button" type="submit" data-ai-provider-target="saveButton">{{ provider == 'disabled' ? 'Turn AI off for this workspace' : 'Save ' ~ providerDefinition.name ~ ' settings' }}</button>
+                </div>
+            </form>
+        </main>
+
+        <aside class="ai-verify-panel" aria-labelledby="ai-verify-title">
+            <div class="ai-verify-heading"><span class="ai-step-label">STEP 2 / 3</span><span class="ai-verify-number">02</span></div>
+            <h2 id="ai-verify-title">Verify the connection</h2>
+            {% if ready %}
+                <div class="ai-verify-state is-ready"><span class="ai-verify-state-icon" aria-hidden="true">✓</span><div><strong>Connection verified</strong><span>{{ testedAt ? testedAt|date('M j, Y · H:i') : 'Test completed' }}{% if lastTestLatencyMs is not null %} · {{ lastTestLatencyMs }} ms{% endif %}</span></div></div>
+                <p class="ai-verify-copy">This route is ready for evidence summaries in {{ workspace.name }}.</p>
+            {% elseif canTest %}
+                <div class="ai-verify-state is-pending"><span class="ai-verify-state-icon" aria-hidden="true">2</span><div><strong>Test before using AI</strong><span>No research data is included in this test.</span></div></div>
+                <p class="ai-verify-copy">ProspectOS sends a short test prompt to {{ providerDefinition.name }} and checks for the expected reply. It does not send prospect evidence.</p>
+                <form method="post" action="{{ path('app_integrations_ai') }}" class="ai-test-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('ai_provider_settings') }}">
+                    <input type="hidden" name="action" value="test">
+                    <button class="button button-secondary ai-test-button" type="submit">Send test prompt to {{ providerDefinition.name }}</button>
+                </form>
+                <p class="ai-test-limit">Shared limit: 10 AI requests per user per hour.</p>
+            {% else %}
+                <div class="ai-verify-state is-blocked"><span class="ai-verify-state-icon" aria-hidden="true">2</span><div><strong>Save provider details first</strong><span>Then verify with one short request.</span></div></div>
+                <p class="ai-verify-copy">The test step unlocks after the provider and model settings are saved.</p>
+            {% endif %}
+
+            <div class="ai-data-note">
+                <span class="ai-data-note-mark" aria-hidden="true">i</span>
+                <div><strong>What a summary can contain</strong><p>Company name, research objective, source links, evidence excerpts and up to five similar team decisions.</p></div>
+            </div>
+
+            <details class="ai-setup-details" data-ai-provider-target="ollamaGuide" {{ provider == 'ollama' ? '' : 'hidden' }}>
+                <summary>Set up a local Ollama model</summary>
+                <ol>
+                    <li>Install Ollama and start the service on your computer.</li>
+                    <li>Choose a model that fits your memory and disk space.</li>
+                    <li>Run <code>ollama pull &lt;model-id&gt;</code>, then enter that exact ID above.</li>
+                    <li>If C: is low on space, set Ollama’s model directory to D: before pulling.</li>
+                </ol>
+                <p>ProspectOS connects to your Ollama endpoint; it does not install Ollama or download models.</p>
+                <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Get Ollama</a>
+            </details>
+        </aside>
+    </div>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/icons.html.twig' as icons %}
+
+{% block title %}Evidence Court #{{ case.id }} · {{ prospect.name }}{% endblock %}
+{% block breadcrumb %}Evidence Court{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/court.css') }}">{% endblock %}
+
+{% macro counsel(side, label, lead, argument, prospect) %}
+    {% import 'macros/icons.html.twig' as icons %}
+    <section class="court-counsel court-{{ side }}" aria-labelledby="counsel-{{ side }}">
+        <header class="court-counsel-head">
+            <span class="court-avatar" aria-hidden="true">{{ side == 'advocate' ? 'A' : 'S' }}</span>
+            <div>
+                <h2 id="counsel-{{ side }}">{{ label }}</h2>
+                <p>{{ lead }}</p>
+            </div>
+            <span class="court-tally" title="Claims admitted by the clerk">{{ argument.admitted }}<small>/{{ argument.claims|length }} admitted</small></span>
+        </header>
+        <div class="court-tools">
+            <span class="court-tools-label">Tools called</span>
+            {% for call in argument.tool_calls %}
+                <code>{{ call.tool }}{% if call.argument %}({{ call.argument }}){% else %}(){% endif %}</code>
+            {% else %}
+                <span class="court-tools-none">None. Argued from the brief only.</span>
+            {% endfor %}
+        </div>
+        <ol class="court-claims">
+            {% for claim in argument.claims %}
+                <li class="court-claim is-{{ claim.ruling }}">
+                    <span class="court-ruling-badge">
+                        {% if claim.ruling == 'struck' %}{{ icons.icon('x', 14) }}Struck{% elseif claim.ruling == 'precedent' %}{{ icons.icon('bookmark', 14) }}Precedent{% else %}{{ icons.icon('check', 14) }}Admitted{% endif %}
+                    </span>
+                    <p class="court-claim-text">{{ claim.text }}</p>
+                    <div class="court-claim-meta">
+                        {% for citation in claim.citations %}
+                            {% if citation starts with 'E' and claim.ruling != 'struck' %}
+                                <a class="court-cite" href="{{ path('app_prospect_show', {id: prospect.id}) }}#evidence-{{ citation|slice(1) }}">{{ citation }}</a>
+                            {% else %}
+                                <span class="court-cite">{{ citation }}</span>
+                            {% endif %}
+                        {% endfor %}
+                        {% if claim.read %}<span class="court-read" title="Counsel opened this record with read_evidence before citing it">read via tool</span>{% endif %}
+                        <span class="court-note">{{ claim.note }}</span>
+                    </div>
+                </li>
+            {% else %}
+                <li class="court-claim is-struck"><p class="court-claim-text">Counsel made no reviewable claims.</p></li>
+            {% endfor %}
+        </ol>
+    </section>
+{% endmacro %}
+
+{% block body %}
+{% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
+{% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
+
+<div class="page-heading court-heading">
+    <div>
+        <a class="text-link report-back" href="{{ path('app_prospect_show', {id: prospect.id}) }}">{{ icons.icon('chevron-left', 16) }}Back to {{ prospect.name }}</a>
+        <div class="eyebrow"><span class="eyebrow-dot"></span>Evidence Court · Case #{{ case.id }}</div>
+        <h1>Should we pursue {{ prospect.name }}?</h1>
+        <p class="page-subtitle">Two AI counsel argue from the saved evidence. A program checks every citation and strikes claims without one. You make the call.</p>
+    </div>
+    <span class="status-tag court-status court-status-{{ case.status }}">{{ {pending: 'Hearing in progress', argued: 'Awaiting your ruling', ruled: 'Ruled', failed: 'Hearing failed'}[case.status] }}</span>
+</div>
+
+{% if case.status == 'pending' %}
+    <section class="panel court-pending" aria-live="polite" data-court-pending>
+        <span class="court-spinner" aria-hidden="true"></span>
+        <div>
+            <h2>Counsel are reading the case file…</h2>
+            <p>The Advocate argues first, then the Skeptic answers. On a local model this can take a minute or two. This page refreshes on its own.</p>
+        </div>
+    </section>
+    <script>setTimeout(() => { if (document.querySelector('[data-court-pending]')) window.location.reload(); }, 4000);</script>
+{% elseif case.status == 'failed' %}
+    <section class="panel court-failed" role="alert">
+        <h2>The hearing could not finish</h2>
+        <p>{{ case.failure }}</p>
+        <a class="button button-secondary" href="{{ path('app_prospect_show', {id: prospect.id}) }}">Back to the report</a>
+    </section>
+{% else %}
+    {% set advocate = transcript.advocate %}
+    {% set skeptic = transcript.skeptic %}
+    {% set total = advocate.admitted + skeptic.admitted %}
+    <section class="panel court-scale-panel" aria-label="Weight of admitted claims">
+        <div class="court-scale-labels"><span>Advocate · {{ advocate.admitted }} admitted</span><span>Skeptic · {{ skeptic.admitted }} admitted</span></div>
+        <div class="court-scale" role="img" aria-label="{{ advocate.admitted }} admitted claims for pursuing, {{ skeptic.admitted }} against">
+            <span class="court-scale-for" style="flex-grow: {{ max(advocate.admitted, total == 0 ? 1 : 0) }}"></span>
+            <span class="court-scale-against" style="flex-grow: {{ max(skeptic.admitted, total == 0 ? 1 : 0) }}"></span>
+        </div>
+        <p class="court-scale-note">{{ advocate.struck + skeptic.struck }} {{ (advocate.struck + skeptic.struck) == 1 ? 'claim was' : 'claims were' }} struck for missing or invalid citations. Struck claims are shown crossed out and do not count.
+            Score {{ transcript.score ?? 'unknown' }}{% if transcript.coverage is not null %} · {{ transcript.coverage }}% data coverage{% endif %} · {{ transcript.precedents }} similar team {{ transcript.precedents == 1 ? 'decision' : 'decisions' }} available.</p>
+    </section>
+
+    <div class="court-bench">
+        {{ _self.counsel('advocate', 'Advocate', 'Argues why the team should pursue this lead.', advocate, prospect) }}
+        {{ _self.counsel('skeptic', 'Skeptic', 'Argues what is weak, unverified or missing.', skeptic, prospect) }}
+    </div>
+
+    <section class="panel court-judge" aria-labelledby="judge-title">
+        {% if case.ruling %}
+            <div class="court-verdict">
+                <span class="court-avatar court-avatar-judge" aria-hidden="true">{{ icons.icon('scale', 18) }}</span>
+                <div>
+                    <h2 id="judge-title">Ruling: {{ {finalized: 'Pursue', rejected: 'Reject', needs_review: 'Needs more evidence'}[case.ruling.decision] ?? case.ruling.decision }}</h2>
+                    <p>{{ case.ruling.reason }}</p>
+                    <small>{{ case.ruling.actor.email }} · {{ case.ruling.createdAt|date('d M Y, H:i') }} · saved to <a href="{{ path('app_memory') }}">team memory</a></small>
+                </div>
+            </div>
+        {% else %}
+            <div class="panel-heading"><div><h2 id="judge-title">Your ruling</h2><p>Only a person can decide. Your ruling and reason are saved to team memory, and future hearings on similar leads can cite them as precedent.</p></div></div>
+            <form method="post" action="{{ path('app_court_rule', {id: case.id}) }}" class="court-ruling-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('court_rule_' ~ case.id) }}">
+                <fieldset class="court-choices">
+                    <legend class="visually-hidden">Decision</legend>
+                    <label class="court-choice court-choice-pursue"><input type="radio" name="decision" value="finalized" required><span>{{ icons.icon('check', 16) }}Pursue</span></label>
+                    <label class="court-choice court-choice-more"><input type="radio" name="decision" value="needs_review"><span>{{ icons.icon('search', 16) }}Needs more evidence</span></label>
+                    <label class="court-choice court-choice-reject"><input type="radio" name="decision" value="rejected"><span>{{ icons.icon('x', 16) }}Reject</span></label>
+                </fieldset>
+                <label for="court-reason">Why? <span>Required. The team will see this later.</span></label>
+                <textarea id="court-reason" name="reason" rows="3" minlength="3" maxlength="960" required placeholder="For example: The no-online-ordering finding is admitted and fits our offer; confirm the owner contact first."></textarea>
+                <button class="button button-primary" type="submit">Record ruling</button>
+            </form>
+        {% endif %}
+    </section>
+
+    <details class="panel court-explainer">
+        <summary>How Evidence Court works</summary>
+        <ol>
+            <li><strong>Brief.</strong> Each counsel gets the lead, its score and a short index of saved evidence records.</li>
+            <li><strong>Tools.</strong> Counsel are Symfony AI agents. They can call three read-only tools bound to this lead only: <code>read_evidence</code>, <code>score_breakdown</code> and <code>team_precedents</code>.</li>
+            <li><strong>Clerk.</strong> A PHP program, not a model, checks every claim. Claims must cite a real record (<code>[E12]</code>), the score (<code>[SCORE]</code>) or a team precedent (<code>[M3]</code>). Anything else is struck.</li>
+            <li><strong>Judge.</strong> You. AI cannot rule, including over MCP.</li>
+        </ol>
+    </details>
+{% endif %}
+
+<p class="court-footer">
+    {% if case.provider %}{{ case.provider }} · {{ case.model }} · {{ (case.latencyMs / 1000)|round(1) }} s · {% endif %}
+    Opened {{ case.openedVia == 'mcp' ? 'by an MCP client' : 'in the app' }}{% if case.openedBy %} by {{ case.openedBy.email }}{% endif %} · {{ case.createdAt|date('d M Y, H:i') }}
+</p>
+{% endblock %}

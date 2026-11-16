@@ -17,6 +17,7 @@ COPY . .
 RUN cp .env.example .env \
     && composer dump-autoload --classmap-authoritative --no-scripts \
     && APP_SECRET=build-only php -d memory_limit=512M bin/console tailwind:build --minify \
+    && APP_SECRET=build-only php bin/console asset-map:compile \
     && : > .env
 
 EXPOSE 8000

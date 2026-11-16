@@ -118,5 +118,20 @@ final class WorkspaceMcpTest extends WebTestCase
         $denied = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
         self::assertSame(-32603, $denied['error']['code']);
         self::assertStringNotContainsString('Private MCP Prospect', $client->getResponse()->getContent());
+
+        $client->request('POST', '/mcp/workspace', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_ACCEPT' => 'application/json, text/event-stream',
+            'HTTP_MCP_SESSION_ID' => $sessionId,
+            'HTTP_MCP_PROTOCOL_VERSION' => '2025-11-25',
+        ], json_encode(['jsonrpc' => '2.0', 'id' => 5, 'method' => 'tools/list'], JSON_THROW_ON_ERROR));
+
+        self::assertResponseIsSuccessful();
+        $tools = array_column(json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR)['result']['tools'], 'name');
+        self::assertContains('open_evidence_court', $tools);
+        self::assertContains('get_court_case', $tools);
+        foreach ($tools as $tool) {
+            self::assertDoesNotMatchRegularExpression('/rul|decide|approve|send/i', $tool, 'MCP clients must never be able to rule, decide, approve or send.');
+        }
     }
 }
