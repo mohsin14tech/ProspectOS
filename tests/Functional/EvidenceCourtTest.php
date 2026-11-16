@@ -96,6 +96,28 @@ final class EvidenceCourtTest extends WebTestCase
         self::assertSame(3, $requests);
     }
 
+    public function testMalformedToolCallFromTheProviderIsRetried(): void
+    {
+        static::createClient();
+        [, , , $prospect, $evidence] = $this->makeCase();
+        $requests = 0;
+        $platform = MockPlatformFactory::createPlatform(function () use (&$requests, $evidence) {
+            if (1 === ++$requests) {
+                throw new \Symfony\AI\Platform\Exception\BadRequestException("Parsing failed. The model generated output that could not be parsed. See 'failed_generation' for more details.");
+            }
+
+            return new TextResult('- The menu is a downloadable PDF. [E'.$evidence->getId().']');
+        });
+        $container = static::getContainer();
+        $court = new EvidenceCourt($container->get(EntityManagerInterface::class), $container->get(\App\Service\AiProviderConfiguration::class),
+            $container->get(\App\Service\ProspectMemory::class), new CitationClerk(), new \Psr\Log\NullLogger(), static function (): void {});
+
+        $case = $court->hear($court->open($prospect, null), $platform, 'mock-model');
+
+        self::assertSame(CourtCase::STATUS_ARGUED, $case->getStatus(), (string) $case->getFailure());
+        self::assertSame(3, $requests);
+    }
+
     public function testProviderFailureIsRecordedInsteadOfThrown(): void
     {
         static::createClient();

@@ -229,7 +229,7 @@
 :root[data-theme] .eyebrow-dot { background: var(--highlight); box-shadow: 0 0 0 3px var(--highlight-soft); }
 
 /* ---------- Surfaces ---------- */
-:root[data-theme] :is(.panel, .summary-card, .hero-panel, .integration-card, .court-counsel, .court-steps li, .workflow-strip a, .ai-callout, .integration-strip, .report-note) {
+:root[data-theme][data-theme] :where(.panel, .summary-card, .hero-panel, .integration-card, .court-counsel, .court-steps li, .workflow-strip a, .ai-callout, .integration-strip, .report-note) {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-card);

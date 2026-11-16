@@ -16,6 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\Toolbox\Toolbox;
+use Symfony\AI\Platform\Exception\BadRequestException;
 use Symfony\AI\Platform\Exception\RateLimitExceededException;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
@@ -212,6 +213,14 @@ RULES;
                 }
                 $tools->takeCalls();
                 ($this->sleeper)(min(30, max(2, $exception->getRetryAfter() ?? 6)) + 1);
+            } catch (BadRequestException $exception) {
+                // Some models occasionally emit a malformed tool call that the provider refuses to parse
+                // (Groq: "Parsing failed ... failed_generation"). That is a transient generation fault, not a bad request.
+                if ($attempt >= self::RATE_LIMIT_ATTEMPTS || 1 !== preg_match('/parsing failed|failed_generation|tool_use_failed/i', $exception->getMessage())) {
+                    throw $exception;
+                }
+                $tools->takeCalls();
+                ($this->sleeper)(1);
             }
         }
         if ('' === $raw) {

@@ -563,3 +563,11 @@ Release status: still local and uncommitted on main, base cfa4837. No commit/pus
 - Verified live: `app:court:hear 3` on Groq gpt-oss-120b, both counsel called `team_precedents` and cited prior rulings `[M4]`, `[M5]` (clerk labelled them Precedent), 4,377 ms.
 - Bug: a hearing failed with `RateLimitExceededException` (Groq on_demand TPM limit 8,000; used 6,275, requested 2,120; retry after about 3 s). Codex's cases #11/#12 failed the same way. `EvidenceCourt::argue()` now retries a counsel turn up to 3 times, waiting the provider's retry-after plus 1 s (2–30 s), discarding tool-call logs from the failed attempt. Sleeper is injectable for tests.
 - Tests: new `EvidenceCourtTest::testProviderRateLimitIsWaitedOutAndTheHearingCompletes`. `docker compose exec -T app php bin/phpunit tests/Functional/EvidenceCourtTest.php` PASS 6/36; `composer test` PASS 100 tests / 455 assertions / 1 skip; lint:container PASS.
+
+### Walkthrough video, light-mode fix, Groq parse retry — 2026-11-17 (Claude Code session)
+
+- Produced `var/video/prospectos-walkthrough.mp4` (76.5 s, 1920x1080, −16.3 LUFS) from the owner's ElevenLabs voiceover: headless-Edge captures of the real light-theme workflow (UI hearing #15, ruling, suppression entry, mailbox setup), animated process chart and stage tracker, zooms, cursor, callouts, real MCP STDIO hearing #17 (Groq, tool calls), CC0 Kenney "Interface Sounds". Private mailbox data blurred into the images. SRT captions and thumbnail in `var/video/`.
+- Found and fixed a light-mode bug: the dashboard hero panel rendered pale text on white because the shared `:is(...)` surface rule in `premium.css` took the specificity of `.court-steps li` and outranked `.hero-panel`. Now `:root[data-theme][data-theme] :where(...)`.
+- Fixed intermittent Groq failures: gpt-oss occasionally emits a malformed tool call (`BadRequestException: Parsing failed ... failed_generation`). `EvidenceCourt::argue()` now retries those (up to 3 attempts). New test `testMalformedToolCallFromTheProviderIsRetried`.
+- The renderer leaked headless Edge child processes (68 found, which exhausted the page file); `render.py` now kills the process tree with `taskkill /T`.
+- `composer test`: PASS, 101 tests / 457 assertions / 1 skip.
