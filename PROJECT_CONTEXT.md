@@ -1,5 +1,21 @@
 # ProspectOS — Project Context / Session Handoff
 
+## Current authoritative checkpoint — final hackathon video produced, 2026-11-16
+
+This supersedes prior next-task statements about recording the video. The final submission video, captions, thumbnail and QA sheets are in ignored `var/video/`:
+
+- `var/video/prospectos-hackathon-demo.mp4` — 69.90 s, 1920×1080 H.264 High / 30 fps / yuv420p, AAC-LC 48 kHz, 14,314,505 bytes. It is within the 90 s and 100 MB limits. Loudness check measured −16.43 LUFS / −1.50 dBTP.
+- `var/video/prospectos-hackathon-demo.srt` — English captions for all 17 narration beats.
+- `var/video/thumbnail.png` — 1280×720, mascot, ProspectOS, “Evidence Court for sales leads” and the hackathon entry badge.
+- `var/video/contact-sheet-2s.png` and `var/video/contact-sheet-beats.png` — export QA sheets; both and the thumbnail were visually reviewed.
+- `CODEX_PROGRESS.md` has the exact capture, render, mux, probe and loudness commands/results. The video uses fresh authenticated 1920×1080 captures from the fictional demo workspace plus the provided light motion kit. No provider keys, real mailbox, browser chrome or Ollama label appear in the final cut. MCP terminal motion is an animation based on the verified successful STDIO case #9 response and current `tools/list` / `get_court_case` results, including the human-only ruling guidance.
+- For the real human-ruling shot, demo cases #9 and #7 were ruled Pursue in the local workspace. Two new MCP hearing attempts hit Groq's token-per-minute limit and are retained as failed local cases #11 and #12; those failures are excluded from the video. They do not change the previously verified successful Groq hearing/MCP evidence.
+- Architecture and run/deploy details are unchanged: Symfony 7.4.23 / PHP 8.4.27, Symfony AI/MCP Bundle 1.0.0-BETA1 and `mcp/sdk` 0.9.0; run locally with `docker compose up --build -d` at `http://127.0.0.1:8000`. Upsun deployment remains unverified. No source commit, push, deployment or hackathon submission occurred; media and production helpers remain ignored under `var/video/`.
+
+### Exact next task
+
+Owner reviews the final video. Then review and commit/push the intended source changes and submit the public GitHub repository plus this video at the Symfony AI & MCP Hackathon portal before **22 Nov 2026, 18:00 CET**.
+
 ## Current authoritative checkpoint — Evidence Court and hackathon readiness, 2026-11-16
 
 This section supersedes the "exact next task" statements below. The owner asked for a creative differentiator using Symfony AI and MCP, a clearer UI/UX, an easy setup, and help submitting to the Symfony AI & MCP Hackathon (deadline **22 Nov 2026, 18:00 CET**). Jurors judge creativity, a working demo (ideally a clone-and-run), what Symfony AI and MCP unlocked, and craft (a README that gets a stranger from clone to demo in five minutes).

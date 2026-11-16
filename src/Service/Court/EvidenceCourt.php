@@ -16,6 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\Toolbox\Toolbox;
+use Symfony\AI\Platform\Exception\RateLimitExceededException;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\PlatformInterface;
@@ -29,6 +30,7 @@ final class EvidenceCourt
 {
     private const MAX_EVIDENCE = 12;
     private const MAX_TOOL_CALLS = 6;
+    private const RATE_LIMIT_ATTEMPTS = 3;
 
     private const RULES = <<<'RULES'
 Court rules:
@@ -51,8 +53,13 @@ RULES;
         private readonly ProspectMemory $memory,
         private readonly CitationClerk $clerk,
         private readonly LoggerInterface $logger,
+        ?\Closure $sleeper = null,
     ) {
+        $this->sleeper = $sleeper ?? static fn (int $seconds) => sleep($seconds);
     }
+
+    /** @var \Closure(int): void */
+    private readonly \Closure $sleeper;
 
     public function isReady(Prospect $prospect): bool
     {
@@ -190,10 +197,23 @@ RULES;
     private function argue(PlatformInterface $platform, string $model, CaseFileTools $tools, string $role, string $brief): array
     {
         $agent = new Agent($platform, $model, toolbox: new Toolbox([$tools]), maxToolCalls: self::MAX_TOOL_CALLS);
-        $raw = trim($agent->call(new MessageBag(Message::forSystem($role), Message::ofUser($brief)), AiProviderConfiguration::invocationOptions($model, [
-            'max_tokens' => 500,
-            'temperature' => 0.3,
-        ]))->asText());
+        // Free provider tiers (for example Groq: 8,000 tokens per minute) can reject a counsel turn
+        // mid-hearing. Wait as long as the provider asks, then rerun that counsel's turn from the start.
+        for ($attempt = 1; ; ++$attempt) {
+            try {
+                $raw = trim($agent->call(new MessageBag(Message::forSystem($role), Message::ofUser($brief)), AiProviderConfiguration::invocationOptions($model, [
+                    'max_tokens' => 500,
+                    'temperature' => 0.3,
+                ]))->asText());
+                break;
+            } catch (RateLimitExceededException $exception) {
+                if ($attempt >= self::RATE_LIMIT_ATTEMPTS) {
+                    throw $exception;
+                }
+                $tools->takeCalls();
+                ($this->sleeper)(min(30, max(2, $exception->getRetryAfter() ?? 6)) + 1);
+            }
+        }
         if ('' === $raw) {
             throw new \RuntimeException('Counsel returned an empty argument.');
         }
