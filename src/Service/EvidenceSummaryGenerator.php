@@ -70,7 +70,8 @@ PROMPT),
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)),
         );
 
-        $result = $platform->invoke($this->configuration->modelName($workspace), $messages, ['max_tokens' => 450, 'temperature' => 0.2]);
+        $model = $this->configuration->modelName($workspace);
+        $result = $platform->invoke($model, $messages, AiProviderConfiguration::invocationOptions($model, ['max_tokens' => 450, 'temperature' => 0.2]));
         $text = trim($result->asText());
         if ('' === $text || mb_strlen($text) > 6000) {
             throw new \RuntimeException('The inference provider returned an invalid summary.');

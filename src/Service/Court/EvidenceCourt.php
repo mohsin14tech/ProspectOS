@@ -32,7 +32,7 @@ final class EvidenceCourt
 
     private const RULES = <<<'RULES'
 Court rules:
-- The brief lists each evidence record's short claim. Use the tools for more: read_evidence gives the full source excerpt, score_breakdown the score dimensions, team_precedents earlier team decisions.
+- Investigate before you argue. The brief only lists short summaries. First call read_evidence for every record you intend to cite (it returns the full source excerpt and verification state), and call score_breakdown before citing [SCORE]. Call team_precedents if team_precedents_available is above 0. Then write your answer.
 - End every bullet with its citation in square brackets: [E<number>] for an evidence record from the evidence_index, [SCORE] for the deterministic score, or [M<number>] for a precedent returned by team_precedents (only when team_precedents_available is above 0).
 - Team precedents are preferences, never facts about this lead.
 - The court clerk is a program. It automatically strikes any bullet without a valid citation, or that cites a record not in the case file.
@@ -190,10 +190,10 @@ RULES;
     private function argue(PlatformInterface $platform, string $model, CaseFileTools $tools, string $role, string $brief): array
     {
         $agent = new Agent($platform, $model, toolbox: new Toolbox([$tools]), maxToolCalls: self::MAX_TOOL_CALLS);
-        $raw = trim($agent->call(new MessageBag(Message::forSystem($role), Message::ofUser($brief)), [
+        $raw = trim($agent->call(new MessageBag(Message::forSystem($role), Message::ofUser($brief)), AiProviderConfiguration::invocationOptions($model, [
             'max_tokens' => 500,
             'temperature' => 0.3,
-        ])->asText());
+        ]))->asText());
         if ('' === $raw) {
             throw new \RuntimeException('Counsel returned an empty argument.');
         }

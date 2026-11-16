@@ -39,9 +39,9 @@
 <section class="summary-section" aria-labelledby="overview-title">
     <div class="section-heading"><div><h2 id="overview-title">Workspace overview</h2><p>Saved records and research activity</p></div><span class="freshness">{{ 'now'|date('H:i') }} · Local time</span></div>
     <div class="summary-grid">
-        <article class="summary-card"><div class="summary-label"><span>Saved candidates</span><span class="metric-icon blue">{{ icons.icon('building', 18) }}</span></div><div class="summary-value">{{ summary.researched }}</div><div class="metric-foot">Across {{ locations is empty ? 'no saved locations yet' : locations|join(' and ') }}</div></article>
-        <article class="summary-card"><div class="summary-label"><span>Finalized leads</span><span class="metric-icon green">{{ icons.icon('arrow-up-right', 18) }}</span></div><div class="summary-value">{{ summary.finalized }}</div><div class="metric-foot">Reviewed examples saved to team memory</div></article>
-        <article class="summary-card"><div class="summary-label"><span>Needs review</span><span class="metric-icon amber">{{ icons.icon('activity', 18) }}</span></div><div class="summary-value">{{ summary.needsReview }}</div><div class="metric-foot">Candidates awaiting a decision</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Saved candidates</span><span class="metric-icon blue">{{ icons.icon('building', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.researched }}</div><div class="metric-foot">Across {{ locations is empty ? 'no saved locations yet' : locations|join(' and ') }}</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Finalized leads</span><span class="metric-icon green">{{ icons.icon('arrow-up-right', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.finalized }}</div><div class="metric-foot">Reviewed examples saved to team memory</div></article>
+        <article class="summary-card"><div class="summary-label"><span>Needs review</span><span class="metric-icon amber">{{ icons.icon('activity', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.needsReview }}</div><div class="metric-foot">Candidates awaiting a decision</div></article>
     </div>
 </section>
 

@@ -184,6 +184,24 @@ final class AiProviderConfiguration
         return 'huggingface' === $this->provider ? $this->huggingFace : $this->generic;
     }
 
+    /**
+     * Reasoning models (for example openai/gpt-oss-*) spend hidden "thinking" tokens before answering,
+     * so tight answer budgets come back empty. Ask them for low effort and leave room for the answer.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @return array<string, mixed>
+     */
+    public static function invocationOptions(string $model, array $options): array
+    {
+        if (1 === preg_match('#(^|/)gpt-oss-#i', $model)) {
+            $options['reasoning_effort'] = 'low';
+            $options['max_tokens'] = max(600, (int) ($options['max_tokens'] ?? 0) + 400);
+        }
+
+        return $options;
+    }
+
     public function test(?Workspace $workspace = null, ?User $actor = null, ?string $provider = null): int
     {
         $saved = $provider !== null && $workspace instanceof Workspace
@@ -207,7 +225,7 @@ final class AiProviderConfiguration
         $result = $platform->invoke($model, new MessageBag(
             Message::forSystem('Follow the user request exactly. Return plain text only.'),
             Message::ofUser('Reply exactly with: ProspectOS provider test passed.'),
-        ), ['max_tokens' => 24, 'temperature' => 0]);
+        ), self::invocationOptions($model, ['max_tokens' => 24, 'temperature' => 0]));
         $text = trim($result->asText());
         if ('ProspectOS provider test passed.' !== $text) {
             throw new \RuntimeException('The selected AI provider returned an invalid test response.');

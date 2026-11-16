@@ -1,7 +1,7 @@
 {% extends 'auth_base.html.twig' %}
 {% block title %}Sign in{% endblock %}
 {% block auth_content %}
-    <div class="auth-mark" aria-hidden="true">P</div>
+    <div class="auth-mark">{% include '_mascot.html.twig' with {size: 76, class: 'auth-mascot', track: true} %}</div>
     <p class="eyebrow">ProspectOS · 14 Technologies</p>
     <h1>Sign in</h1>
     <p class="page-subtitle">Research leads, put them on trial in Evidence Court, and keep what your team decides.</p>

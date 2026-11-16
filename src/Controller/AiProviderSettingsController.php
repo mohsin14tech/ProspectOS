@@ -12,6 +12,7 @@ use App\Service\AiProviderConfiguration;
 use App\Service\CurrentWorkspaceProvider;
 use App\Service\SecretVault;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,6 +30,7 @@ final class AiProviderSettingsController extends AbstractController
         AiProviderConfiguration $configuration,
         SecretVault $vault,
         RateLimiterFactory $aiSummaryLimiter,
+        LoggerInterface $logger,
     ): Response {
         $workspace = $workspaceProvider->get();
         $actor = $this->getUser();
@@ -79,7 +81,12 @@ final class AiProviderSettingsController extends AbstractController
                         $targetProvider = trim((string) $request->request->get('provider', $setting?->getProvider() ?? ''));
                         $latency = $configuration->test($workspace, $actor, $targetProvider !== '' ? $targetProvider : null);
                         $this->addFlash('success', sprintf('Provider test passed in %d ms. AI research is ready for this workspace.', $latency));
-                    } catch (\Throwable) {
+                    } catch (\Throwable $exception) {
+                        // Log a redacted reason so operators can tell a bad key from a bad model name or a network issue.
+                        $logger->warning('AI provider test failed.', [
+                            'exception' => $exception::class,
+                            'message' => (string) preg_replace('/(gsk_|sk-|hf_|AIza)[A-Za-z0-9_\-]+/', '$1REDACTED', mb_substr($exception->getMessage(), 0, 300)),
+                        ]);
                         $this->addFlash('error', 'The provider test failed. Check the model name, saved key, provider account and network, then test again.');
                     }
                 }
