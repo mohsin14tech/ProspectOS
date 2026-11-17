@@ -4,6 +4,8 @@ Target: about 210 words at a calm pace (~150 words per minute), under 90 seconds
 Every claim is backed by code and tests in this repository (checked 2026-11-17).
 v3.0 covered mostly Evidence Court; v3.1 walks through the whole product.
 
+**Final cut (2026-11-17):** at the owner's request nothing demo-related is shown, so the sentence "No API key? The demo replays recorded hearings." was cut from the recorded voiceover at its pauses (75.04–79.03 s). The final film is 81.8 s and uses only real data: a real SearXNG web search, a real inspection of a café website, live Groq hearings (#33 in the app, #36 over MCP with the ruling through the elicitation form).
+
 ## Plain text for the voice generator
 
 Small sales teams waste weeks on leads that were never real. ProspectOS fixes that, step by step.

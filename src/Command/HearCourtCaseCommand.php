@@ -22,7 +22,7 @@ final class HearCourtCaseCommand
     ) {
     }
 
-    public function __invoke(SymfonyStyle $io, #[Argument('Local prospect ID')] int $prospectId): int
+    public function __invoke(SymfonyStyle $io, #[Argument('Local prospect ID')] int $prospectId, #[\Symfony\Component\Console\Attribute\Option('Replay the recorded demo hearing even if an AI provider is connected (demo leads only)')] bool $replay = false): int
     {
         $prospect = $this->entityManager->getRepository(Prospect::class)->find($prospectId);
         if (!$prospect instanceof Prospect) {
@@ -36,7 +36,7 @@ final class HearCourtCaseCommand
             return Command::FAILURE;
         }
 
-        $case = $this->court->hear($this->court->open($prospect, null));
+        $case = $this->court->hear($this->court->open($prospect, null), forceReplay: $replay);
         if (CourtCase::STATUS_ARGUED !== $case->getStatus()) {
             $io->error((string) $case->getFailure());
 

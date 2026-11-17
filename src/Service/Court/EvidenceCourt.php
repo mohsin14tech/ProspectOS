@@ -31,7 +31,8 @@ final class EvidenceCourt
 {
     private const MAX_EVIDENCE = 12;
     private const MAX_TOOL_CALLS = 6;
-    private const RATE_LIMIT_ATTEMPTS = 3;
+    // Free tiers (Groq: 8,000 tokens/minute) often need a couple of waits across a three-turn hearing.
+    private const RATE_LIMIT_ATTEMPTS = 5;
 
     private const RULES = <<<'RULES'
 Court rules:
@@ -99,14 +100,14 @@ RULES;
      *
      * @param (\Closure(float $step, string $message): void)|null $onProgress live updates (0..PROGRESS_STEPS), for example MCP progress notifications
      */
-    public function hear(CourtCase $case, ?PlatformInterface $platform = null, ?string $model = null, ?\Closure $onProgress = null, bool $usePrecedents = true): CourtCase
+    public function hear(CourtCase $case, ?PlatformInterface $platform = null, ?string $model = null, ?\Closure $onProgress = null, bool $usePrecedents = true, bool $forceReplay = false): CourtCase
     {
         if (!$case->isPending()) {
             return $case;
         }
         $report = static function (float $step, string $message) use ($onProgress): void {
             if (null !== $onProgress) {
-                $onProgress($step, $message);
+                $onProgress(round($step, 2), $message);
             }
         };
 
@@ -116,7 +117,7 @@ RULES;
 
         $modelLabel = null;
         try {
-            if (null === $platform && null !== $this->recordings && $this->isReplay($prospect)) {
+            if (null === $platform && null !== $this->recordings && ($this->isReplay($prospect) || ($forceReplay && $this->recordings->has($prospect)))) {
                 // Zero-key demo: replay recorded words; tools, clerk and threading still run for real.
                 // In the app the replay is paced so the live conversation reads like one.
                 $platform = $this->recordings->platform($prospect, CourtCase::VIA_APP === $case->getOpenedVia() ? 900 : 0);
@@ -171,7 +172,7 @@ RULES;
                 });
             });
             $publish('advocate', 'is reading the file');
-            $report(0, 'Case file opened: '.\count($evidence).' evidence records'.($score instanceof ScoreSnapshot ? ', score '.$score->getScore() : '').'. The Advocate is investigating.');
+            $report(0, 'Case file opened: '.\count($evidence).' evidence records'.(null !== $score?->getScore() ? ', score '.$score->getScore() : '').'. The Advocate is investigating.');
 
             $advocate = $this->argue($platform, $model, $tools, self::ADVOCATE, $brief);
             $partial['advocate'] = $advocate;
@@ -203,8 +204,7 @@ RULES;
                     $rebuttal = $this->argue($platform, $model, $tools, self::REBUTTAL, $brief
                         ."\n\nYour opening points:\n".$this->numbered($advocate['claims'], '')
                         ."\n\nThe Skeptic's replies. Answer the strongest admitted ones by their S number:\n".$this->numbered($skeptic['claims'], 'S'),
-                        // Third turn of a minute-long hearing: free tiers (Groq: 8,000 tokens/minute) often need one more wait here.
-                        self::RATE_LIMIT_ATTEMPTS + 2);
+                        self::RATE_LIMIT_ATTEMPTS);
                     $rebuttal = $this->thread($rebuttal, $skeptic['claims']);
                     $rebuttal = $this->strikeRepeats($rebuttal, $advocate, 'Struck: repeats the opening instead of answering the Skeptic.');
                 } catch (\Throwable $exception) {

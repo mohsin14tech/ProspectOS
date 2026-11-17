@@ -611,3 +611,11 @@ Release status: still local and uncommitted on main, base cfa4837. No commit/pus
 - Docs: `docs/JUDGES.md` (new), README quick start (zero-key path) and Symfony AI section (Platform replay, Store), PROJECT_CONTEXT checkpoint.
 - Tests: new `RecordedHearingReplayTest` (2), `PrecedentRetrievalTest` (2), `CourtConversationTest` (2); `docker compose exec -T app php bin/phpunit` PASS 113 tests / 597 assertions / 1 skip.
 - Not done: filing upstream Symfony AI issues (needs owner approval to post publicly).
+
+### Final video with real data; hearing robustness fixes — 2026-11-17 (Claude Code session)
+
+- Owner: "dont show demo anywhere. make it real… full professional video… then update the project in symfony" and "also on youtube".
+- Real data: renamed the local workspace display name to "14 Technologies" (slug unchanged); ran a real SearXNG web search ("independent cafes in Islamabad…", 5 candidates: two listing pages, Loafology, Method, Restaurant Guru) and a real website inspection of loafology.com (robots.txt respected), which added observed page metadata to lead #7. Live Groq hearings: #32 (Method), #33 (Loafology, filmed live from the UI), #34 (listing page), #36 (Loafology over MCP STDIO with progress, ruled through the elicitation form). No claims were struck in these real hearings, so the film highlights the clerk's actual "Checked" verdicts rather than staging a removal.
+- Bugs found while filming and fixed: progress text read "score ." when a lead has no score; step values printed as 1.3599999 (now rounded); MCP hearing #35 failed when the Skeptic turn hit Groq's 8,000 TPM limit, so every counsel turn now gets 5 rate-limit attempts (`RATE_LIMIT_ATTEMPTS`). Added `app:court:hear --replay` (forces the recorded replay for demo leads; used only for testing).
+- Video: voiceover cut to 81.8 s (demo sentence removed), capture script `var/video/v4/capture_v5.py` (blurs any email address or demo/sample/synthetic text automatically; inbox list blurred), compositor `var/video/v4/film.html` with chapter chips (01–06) and wipe transitions, real MCP terminal + elicitation form from case #36, new thumbnail from the real hearing, SRT captions.
+- Tests: `docker compose exec -T app php bin/phpunit` PASS 113 tests / 597 assertions / 1 skip.
