@@ -11,11 +11,11 @@ All four planned phases to compete for first place are done in code except the f
 - Tests: `composer test` 113 tests / 597 assertions / 1 skip.
 
 - **Phase 4 (final video)**: `var/video/prospectos-final.mp4` (81.8 s, real data only, demo line cut), published on YouTube as https://youtu.be/LHNodY0Z-YU (description rewritten to match the film; custom thumbnail set; the previous video is private). The Symfony hackathon submission (status Submitted) now uses that video, an updated description (conversation, live hearings, Store precedents, MCP elicitation/progress/resources/prompts/App) and tags Elicitation, MCP Apps, Symfony AI Store.
-- PR #2 (https://github.com/mohsin14tech/ProspectOS/pull/2) is green and mergeable but **not merged yet**: merging needs the owner's go-ahead in this environment.
+- PR #2 merged into `main` (bb0e829). YouTube has a manual English caption track. Upstream issues filed: symfony/ai#2976 (InMemory hybrid score scaling) and symfony/ai#2977 (provider error code on BadRequestException).
 
 ### Exact next task
 
-Merge PR #2 into `main` so the public repository (and the docs/JUDGES.md link in the YouTube description) shows this work before **22 Nov 2026, 18:00 CET**. Optionally verify the elicitation form and MCP App inside Claude Desktop, and file upstream Symfony AI / PHP MCP SDK issues found during the build (needs owner approval to post).
+Nothing is required before the deadline (**22 Nov 2026, 18:00 CET**). Optional: verify the elicitation form and MCP App inside Claude Desktop; follow up on symfony/ai#2976 and #2977 if maintainers respond (drop the `semanticRatio: 1.0` workaround in `PrecedentRetriever` once #2976 is fixed).
 
 ## Current authoritative checkpoint — Phase 1 "MCP depth", 2026-11-17
 
