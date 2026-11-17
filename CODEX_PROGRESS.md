@@ -619,3 +619,10 @@ Release status: still local and uncommitted on main, base cfa4837. No commit/pus
 - Bugs found while filming and fixed: progress text read "score ." when a lead has no score; step values printed as 1.3599999 (now rounded); MCP hearing #35 failed when the Skeptic turn hit Groq's 8,000 TPM limit, so every counsel turn now gets 5 rate-limit attempts (`RATE_LIMIT_ATTEMPTS`). Added `app:court:hear --replay` (forces the recorded replay for demo leads; used only for testing).
 - Video: voiceover cut to 81.8 s (demo sentence removed), capture script `var/video/v4/capture_v5.py` (blurs any email address or demo/sample/synthetic text automatically; inbox list blurred), compositor `var/video/v4/film.html` with chapter chips (01–06) and wipe transitions, real MCP terminal + elicitation form from case #36, new thumbnail from the real hearing, SRT captions.
 - Tests: `docker compose exec -T app php bin/phpunit` PASS 113 tests / 597 assertions / 1 skip.
+
+### Publishing — 2026-11-17 (Claude Code session)
+
+- Owner uploaded `prospectos-final.mp4` to YouTube (https://youtu.be/LHNodY0Z-YU, public; the earlier upload is private) and set the video URL in the hackathon dashboard.
+- YouTube: replaced the description (it was the earlier v3 script, still mentioning "The Advocate answers back" and the cut demo line) with an accurate one including chapter timestamps; "Changes saved" confirmed; the public thumbnail is the new real-hearing thumbnail.
+- Symfony hackathon project: rewrote the description (the old one said "there is deliberately no ruling tool"), added tags Elicitation, MCP Apps, Symfony AI Store; saved with "Update project" and verified after reload; team page shows "Submitted".
+- CI on PR #2 passed after fixing the zero-key step to use `.env.example` (`AI_PROVIDER` was undefined with an empty `.env`). Merge not performed: blocked by the environment's permission check; awaiting the owner.
