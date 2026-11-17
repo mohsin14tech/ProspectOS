@@ -57,7 +57,8 @@ jobs:
       - name: Zero-key demo hearing on a fresh clone
         # No AI provider is configured in CI: the demo lead replays its recorded hearing through
         # Symfony AI's Agent, the real evidence tools and the clerk. Fails if the hearing does not finish.
-        run: docker compose run --rm --no-deps app sh -lc 'touch .env && php bin/console app:court:hear 1 | tee /tmp/hearing.txt && grep -q "Recorded demo" /tmp/hearing.txt && grep -q "Advocate answers back" /tmp/hearing.txt'
+        # Uses the documented .env.example exactly as a person cloning the repository would (AI_PROVIDER=disabled).
+        run: docker compose run --rm --no-deps app sh -lc 'cp .env.example .env && php bin/console app:court:hear 1 | tee /tmp/hearing.txt && grep -q "Recorded demo" /tmp/hearing.txt && grep -q "Advocate answers back" /tmp/hearing.txt'
 
       - name: Prepare isolated test database
         run: |
