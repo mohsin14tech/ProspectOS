@@ -1,0 +1,120 @@
+{
+    "juniper-table": {
+        "recorded_with": "Groq / openai/gpt-oss-120b",
+        "recorded_at": "2026-11-17",
+        "source_case": 29,
+        "turns": {
+            "advocate": {
+                "tool_calls": [
+                    {
+                        "tool": "read_evidence",
+                        "argument": "{{E:cc9bed13}}"
+                    },
+                    {
+                        "tool": "score_breakdown",
+                        "argument": null
+                    }
+                ],
+                "raw": "- The lead scores 72 out of 100, indicating a strong opportunity for a new customer. [SCORE]  \n- Our research shows no online ordering for Juniper Table, matching the target criteria of independent cafés without that feature. [{{E:cc9bed13}}]"
+            },
+            "skeptic": {
+                "tool_calls": [
+                    {
+                        "tool": "read_evidence",
+                        "argument": "{{E:cc9bed13}}"
+                    }
+                ],
+                "raw": "- To 1: The 72‑point score looks good, but it’s based on incomplete data – we have no information on how to contact Juniper Table or how recent their interest is [SCORE]  \n- To 2: The claim that there’s no online ordering comes from a synthetic fixture, which is just sample data and not a real check of the restaurant’s website [{{E:cc9bed13}}]  \n- Also: We don’t have any verified source confirming the restaurant’s current ordering setup, so the match to the target criteria is uncertain."
+            },
+            "rebuttal": {
+                "tool_calls": [
+                    {
+                        "tool": "score_breakdown",
+                        "argument": null
+                    }
+                ],
+                "raw": "- To S1: The score is 72 out of 100, but we lack contact details and recent intent data, so the contactability and intent recency dimensions are unknown, limiting confidence in outreach success. [SCORE]  \n- To S2: The “no online ordering” finding comes from a synthetic fixture, which is only sample data and not a real check of Juniper Table’s website. [{{E:cc9bed13}}]"
+            }
+        }
+    },
+    "northstar-dental": {
+        "recorded_with": "Groq / openai/gpt-oss-120b",
+        "recorded_at": "2026-11-17",
+        "source_case": 27,
+        "turns": {
+            "advocate": {
+                "tool_calls": [
+                    {
+                        "tool": "read_evidence",
+                        "argument": "{{E:9c2cc10b}}"
+                    },
+                    {
+                        "tool": "score_breakdown",
+                        "argument": null
+                    }
+                ],
+                "raw": "- The lead scores 65 out of 100, indicating a solid opportunity worth pursuing now [SCORE].  \n- The score is based on decent data coverage (75%) and strong fits for market and opportunity dimensions, showing the clinic likely matches our target profile [SCORE]."
+            },
+            "skeptic": {
+                "tool_calls": [
+                    {
+                        "tool": "read_evidence",
+                        "argument": "{{E:9c2cc10b}}"
+                    },
+                    {
+                        "tool": "score_breakdown",
+                        "argument": null
+                    }
+                ],
+                "raw": "- To 1: The 65 score looks decent, but it’s missing key data on who to contact and how recent their interest is, so we can’t be sure it’s a ready opportunity. [SCORE]  \n- To 2: The coverage figure (75%) comes from synthetic, unverified records, so the “strong fits” claim isn’t backed by real evidence. [{{E:9c2cc10b}}]  \n- Also: Without real contact info or recent intent, we risk spending time on a lead that may not respond. [SCORE]"
+            },
+            "rebuttal": {
+                "tool_calls": [
+                    {
+                        "tool": "read_evidence",
+                        "argument": "{{E:9c2cc10b}}"
+                    }
+                ],
+                "raw": "- S2: The 75% coverage claim relies on synthetic, unverified records, so we can’t confirm the “strong fits” with real data. A quick check of actual contact details and recent activity would settle this. [{{E:9c2cc10b}}]"
+            }
+        }
+    },
+    "olive-and-grain": {
+        "recorded_with": "Groq / openai/gpt-oss-120b",
+        "recorded_at": "2026-11-17",
+        "source_case": 28,
+        "turns": {
+            "advocate": {
+                "tool_calls": [
+                    {
+                        "tool": "read_evidence",
+                        "argument": "{{E:54d79571}}"
+                    },
+                    {
+                        "tool": "score_breakdown",
+                        "argument": null
+                    }
+                ],
+                "raw": "- The lead scores 64 out of 100, indicating a solid opportunity for a new customer in this market segment. [SCORE]  \n- Data covers 75% of the needed information, giving us a reliable view of the cafe’s potential without needing more research. [{{E:54d79571}}]  \n- The opportunity dimension alone rates 64, showing that a downloadable menu could attract customers looking for offline ordering options. [{{E:54d79571}}]"
+            },
+            "skeptic": {
+                "tool_calls": [
+                    {
+                        "tool": "read_evidence",
+                        "argument": "{{E:54d79571}}"
+                    }
+                ],
+                "raw": "- To 1: The 64‑point score sounds decent, but the breakdown shows no data on how reachable the cafe is or how recent its interest is, so the number may be overstated. [SCORE]  \n- To 2: The claim of 75% coverage is unverified; the only evidence we have ({{E:54d79571}}) is synthetic and not based on real observations, so we can’t trust that figure. [{{E:54d79571}}]  \n- To 3: The opportunity rating relies on a synthetic fixture that didn’t examine an actual menu, so we don’t know if a downloadable menu would really help this cafe. [{{E:54d79571}}]"
+            },
+            "rebuttal": {
+                "tool_calls": [
+                    {
+                        "tool": "score_breakdown",
+                        "argument": null
+                    }
+                ],
+                "raw": "- To S1: The score is 64, but we indeed lack data on reachability and recent interest, which are marked unknown in the breakdown; a quick call to the cafe would confirm contactability and current demand. [SCORE]  \n- To S2: The 75% coverage claim comes from synthetic data ({{E:54d79571}}), so it isn’t verified; we’d need a real site visit or a local survey to validate the coverage figure. [{{E:54d79571}}]"
+            }
+        }
+    }
+}

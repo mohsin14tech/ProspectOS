@@ -4,13 +4,16 @@
 
 ProspectOS is a Symfony research workspace for small business-development teams. It finds leads, saves every finding with its source, and scores them with a deterministic, explainable formula. Then comes the part that is "more than another chatbot": **Evidence Court**.
 
-1. An **Advocate** agent argues why the team should pursue the lead.
-2. A **Skeptic** agent argues what is weak, unverified or missing.
-3. Both are Symfony AI agents with three read-only tools bound to that single lead: `read_evidence`, `score_breakdown` and `team_precedents`.
-4. A **Clerk**, which is plain PHP and not a model, checks every claim. A claim that does not cite a real saved record (`[E12]`), the score (`[SCORE]`) or a past team decision (`[M3]`) is **struck**. So is a claim that cites a record that doesn't exist, or a Skeptic claim that just repeats the Advocate. Hallucinations can't talk their way in.
-5. **You rule**: pursue, reject, or ask for more evidence. Your ruling and reason become team memory, and future hearings on similar leads can cite them as precedent.
+It reads like a chat between two colleagues, in plain language:
 
-Over **MCP** (official PHP MCP SDK), Claude Desktop, Claude Code or any MCP client can list leads, open a hearing and read the transcript. There is deliberately **no ruling tool**: an AI can argue, but only a person in the app can decide.
+1. An **Advocate** agent opens with the 2–3 best reasons to pursue the lead.
+2. A **Skeptic** agent replies to each point ("Replying to Advocate A1…"): what is weak, unverified or missing.
+3. The Advocate answers the strongest worries back, conceding when they are right and naming what would settle it.
+4. All three turns are Symfony AI agents with three read-only tools bound to that single lead: `read_evidence`, `score_breakdown` and `team_precedents`.
+5. A **Clerk**, which is plain PHP and not a model, checks every claim. A claim that does not cite a real saved record (`[E12]`), the score (`[SCORE]`) or a past team decision (`[M3]`) is **struck**. So is a claim that cites a record that doesn't exist, or a Skeptic claim that just repeats the Advocate. Hallucinations can't talk their way in.
+6. **You rule**: pursue, reject, or ask for more evidence. Your ruling and reason become team memory, and future hearings on similar leads can cite them as precedent.
+
+Over **MCP** (official PHP MCP SDK), Claude Desktop, Claude Code or any MCP client can run the whole court: open a hearing and watch it live (progress notifications), read transcripts and evidence as resources, use ready-made prompts, see the hearing as an interactive card (an MCP App), and ask the human to rule. The ruling is an **elicitation**: the client shows the person a form, and only their answer is recorded. No tool accepts a decision as an argument, so a model can argue but never rule.
 
 > Built for the [Symfony AI & MCP Hackathon 2026](https://symfony.com/hackathon) by 14 Technologies.
 
@@ -30,9 +33,11 @@ On Windows PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
 The first build downloads PHP packages and takes a few minutes. Then:
 
 1. Open **http://127.0.0.1:8000** and click **Enter the demo workspace**. Sign-in is `demo@prospectos.test` / `prospectos-demo`. It holds three fictional sample businesses.
-2. **Connect an AI model** in **Integrations → AI** (it takes about a minute, see below). Press **Send test prompt**. Every connection must pass a real test before it is used.
-3. Open **Evidence Court**, pick a lead, click **Open hearing**, and watch the Advocate and the Skeptic argue. Struck claims appear crossed out with the Clerk's reason.
+2. **No key yet?** Open **Evidence Court** and click **Watch recorded hearing** on any demo lead. The three demo leads replay hearings recorded from Groq `openai/gpt-oss-120b`; only the model's words are replayed, while the agent loop, evidence tools and clerk run live. It is labelled "Recorded demo hearing".
+3. **Connect an AI model** in **Integrations → AI** (about a minute, see below) and press **Send test prompt**. Every connection must pass a real test before it is used. Now **Open hearing** runs live: messages appear as each side writes them.
 4. Record your **ruling**, then open **Memory** to see it saved as team precedent.
+
+Judges: [docs/JUDGES.md](docs/JUDGES.md) is a five-minute tour with where-to-look pointers and honest limits.
 
 ### Connect a model (pick one)
 
@@ -67,7 +72,20 @@ Claude Desktop (`claude_desktop_config.json`):
 }
 ```
 
-Then ask: *"List the ProspectOS demo leads and put the one with the highest score on trial."* The client calls `list_demo_leads` and `open_evidence_court`, and gets back the clerk-reviewed transcript plus a link where a human can rule. Signed-in workspace members also get `open_evidence_court`, `get_court_case`, `get_workspace_summary` and `get_prospect_report` over authenticated Streamable HTTP at `/mcp/workspace`.
+Then ask: *"List the ProspectOS demo leads and put the one with the highest score on trial."* Or pick the `cross_examine` prompt. What the server offers:
+
+| MCP feature | What it does in ProspectOS |
+| --- | --- |
+| Tools | `list_demo_leads`, `open_evidence_court`, `get_court_case`, `request_ruling`, `show_court_case` |
+| Progress notifications | `open_evidence_court` streams each step live: "Advocate called read_evidence(E6)", "Advocate rested: 1 admitted, 3 struck"… |
+| Elicitation | `request_ruling` asks the human for Pursue / Reject / Needs more evidence plus a reason, in a form shown by their client. Declining records nothing. Clients without forms are pointed to the app. |
+| Resources | `prospectos://court/docket`, plus templates `prospectos://court/{caseId}` and `prospectos://lead/{leadId}/evidence` |
+| Prompts | `cross_examine` (run a hearing, check each admitted claim against its evidence, then ask me to rule) and `brief_me` (embeds a transcript as a resource) |
+| MCP App | `show_court_case` renders `ui://evidence-court/hearing`: admitted claims highlighted, struck claims crossed out, and a "Rule on this case" button that opens the same human-only form |
+
+Signed-in workspace members get the same court (scoped to their workspace) plus `get_workspace_summary` and `get_prospect_report` over authenticated Streamable HTTP at `/mcp/workspace`.
+
+How this is verified: [`tests/Functional/McpStdioEndToEndTest.php`](tests/Functional/McpStdioEndToEndTest.php) spawns `bin/console mcp:server` and drives it with the official PHP MCP SDK **client**: it answers and declines the ruling form, reads every resource and prompt, and renders the App. Elicitation and progress were also run by hand against a live Groq hearing over STDIO and over authenticated HTTP, on protocol revisions 2025-06-18, 2025-11-25 and 2026-07-28. Rendering inside Claude's own MCP Apps host has not been tested yet.
 
 You can also run a hearing from the terminal:
 
@@ -78,8 +96,9 @@ docker compose exec app php bin/console app:court:hear 1
 ## What Symfony AI and the PHP MCP SDK made possible
 
 - **Symfony AI Agent + Toolbox**: counsel are real agents. `CaseFileTools` exposes three `#[AsTool]` methods scoped to one lead in one workspace. The tool loop, argument resolution and result handling come from `symfony/ai-agent`. Every call is logged into the transcript, so you can see what each side actually read.
-- **Symfony AI Platform**: one `PlatformInterface` behind Groq, Hugging Face, Gemini, OpenAI, OpenRouter and Ollama. The workspace admin chooses the provider; there is no silent fallback.
-- **PHP MCP SDK via `symfony/mcp-bundle`**: `#[McpTool]` services expose the court to outside agents over STDIO and authenticated HTTP. It took two small classes, and they reuse the same `EvidenceCourt` service the UI uses.
+- **Symfony AI Platform**: one `PlatformInterface` behind Groq, Hugging Face, Gemini, OpenAI, OpenRouter and Ollama. The workspace admin chooses the provider; there is no silent fallback. The zero-key demo is a Platform too: `RecordedHearings` replays recorded model output through the same Agent, so tools and the clerk still run for real.
+- **Symfony AI Store**: past team decisions are indexed in an in-memory `Store` and a `Retriever` finds those about similar leads, which counsel can cite as precedents. The default vectorizer is a small key-free lexical one (`LexicalVectorizer`); any embedding vectorizer can replace it.
+- **PHP MCP SDK via `symfony/mcp-bundle`**: the court is a full MCP citizen over STDIO and authenticated HTTP. `#[McpTool]`, `#[McpResource]`, `#[McpResourceTemplate]` and `#[McpPrompt]` services plus one `#[AsMcpApp]` class, all reusing the `EvidenceCourt` service the UI uses. `ClientGateway::elicit()` is what makes "only a human rules" enforceable outside our own UI, and `ClientGateway::progress()` turns a 20-second agent hearing into something you can watch.
 - **Deterministic guardrails around the AI**: the score (`OpportunityScorer`) and the citation check (`CitationClerk`) are plain PHP and unit-tested. The model argues; code decides what counts; a human rules.
 
 ## Architecture in one screen
@@ -94,12 +113,13 @@ Research (SearXNG search / bounded website inspection)
      ├─ Skeptic agent  ─┘  tools: read_evidence · score_breakdown · team_precedents
      ├─ CitationClerk (PHP): admit / strike every claim
      └─ Human ruling ─► ProspectDecision (team memory) ─► precedent for future hearings
-   MCP: list_demo_leads · open_evidence_court · get_court_case   (no ruling tool, by design)
+   MCP: tools · live progress · resources · prompts · MCP App card
+        request_ruling ─► elicitation form ─► only the human's answer is recorded
 ```
 
 Stack: Symfony 7.4 (PHP 8.4), Twig + Stimulus + Turbo, PostgreSQL 16 + Doctrine, Symfony Messenger (Doctrine transport) with a separate worker, Symfony AI 1.0 beta (Agent, Platform, Generic and Hugging Face bridges), `symfony/mcp-bundle` with `mcp/sdk` 0.9, and a private SearXNG container for web search.
 
-Key files: [`src/Service/Court/EvidenceCourt.php`](src/Service/Court/EvidenceCourt.php), [`CaseFileTools.php`](src/Service/Court/CaseFileTools.php), [`CitationClerk.php`](src/Service/Court/CitationClerk.php), [`src/Mcp/Demo/DemoEvidenceCourtTool.php`](src/Mcp/Demo/DemoEvidenceCourtTool.php), [`templates/court/show.html.twig`](templates/court/show.html.twig).
+Key files: [`src/Service/Court/EvidenceCourt.php`](src/Service/Court/EvidenceCourt.php), [`CaseFileTools.php`](src/Service/Court/CaseFileTools.php), [`CitationClerk.php`](src/Service/Court/CitationClerk.php), [`src/Mcp/Demo/DemoEvidenceCourtTool.php`](src/Mcp/Demo/DemoEvidenceCourtTool.php), [`McpCourtroom.php`](src/Service/Court/McpCourtroom.php), [`templates/court/show.html.twig`](templates/court/show.html.twig).
 
 ## Also in the box
 
@@ -113,7 +133,7 @@ Key files: [`src/Service/Court/EvidenceCourt.php`](src/Service/Court/EvidenceCou
 
 - AI is off until an admin connects and tests a provider. No silent fallback.
 - Evidence text is treated as untrusted (prompt-injection aware). Agents have read-only tools for one lead only, and a cap of six tool calls.
-- Only people can rule, approve or send. MCP tools cannot.
+- Only people can rule, approve or send. Over MCP a ruling only comes from the elicitation form the person answers; no tool takes a decision argument, and a test enforces that.
 - Demo data is fictional and labelled as such. The demo login exists only when `DEMO_LOGIN_PASSWORD` is set, and never in `APP_ENV=prod`.
 - Secrets live in the ignored `.env`. API keys and mailbox passwords are encrypted in the database.
 

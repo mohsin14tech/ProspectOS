@@ -100,6 +100,21 @@ class CourtCase
         $this->completedAt = new \DateTimeImmutable();
     }
 
+    /**
+     * Saves the conversation so far while the hearing is still running, so the page can show
+     * messages as they are written. `live` says who is talking and what they are doing.
+     *
+     * @param array<string, mixed> $partial
+     */
+    public function recordProgress(array $partial, ?string $speaker, ?string $activity): void
+    {
+        if (self::STATUS_PENDING !== $this->status) {
+            return;
+        }
+        $partial['live'] = ['speaker' => $speaker, 'activity' => null === $activity ? null : mb_substr($activity, 0, 120)];
+        $this->transcript = $partial;
+    }
+
     public function fail(string $reason): void
     {
         $this->status = self::STATUS_FAILED;

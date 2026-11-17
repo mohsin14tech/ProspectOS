@@ -1,0 +1,52 @@
+{# Thread items for the Evidence Court conversation. Used by the page and the live endpoint. #}
+{% import 'macros/icons.html.twig' as icons %}
+            {% if transcript.brief is not defined %}
+            <li class="chat-system" data-key="opening">Opening the case file on {{ prospect.name }}…</li>
+            {% else %}
+            <li class="chat-system" style="--i: 0" data-key="intro">
+                Both sides read the same file on {{ prospect.name }}: {{ transcript.brief|length }} saved {{ transcript.brief|length == 1 ? 'record' : 'records' }}{% if transcript.score is not null %}, lead score {{ transcript.score }} out of 100{% endif %}{% if transcript.precedents %}, {{ transcript.precedents }} past team {{ transcript.precedents == 1 ? 'decision' : 'decisions' }}{% endif %}. Every message must point to proof, or the clerk removes it.
+            </li>
+            {% endif %}
+            {% for msg in messages %}
+                <li class="chat-msg from-{{ msg.speaker }} is-{{ msg.ruling }}" style="--i: {{ loop.index }}" data-key="{{ msg.label }}">
+                    <span class="chat-avatar" aria-hidden="true">{{ msg.speaker == 'advocate' ? 'A' : 'S' }}</span>
+                    <div class="chat-body">
+                        <div class="chat-name">{{ msg.speaker == 'advocate' ? 'Advocate' : 'Skeptic' }}<span class="chat-label">{{ msg.label }}</span></div>
+                        {% if msg.checked is not empty %}<div class="chat-checked">{{ icons.icon('search', 12) }}Before writing: {{ msg.checked|join(' · ') }}</div>{% endif %}
+                        <div class="chat-bubble">
+                            {% if msg.quote %}
+                                <blockquote class="chat-quote from-{{ msg.quote.who|lower }}"><b>Replying to {{ msg.quote.who }} {{ msg.quote.label }}</b>{{ msg.quote.text }}</blockquote>
+                            {% endif %}
+                            <p class="chat-text">{{ msg.text }}</p>
+                            {% if msg.sources is not empty %}
+                                <div class="chat-sources">
+                                    {% for source in msg.sources %}
+                                        {% if source.kind == 'evidence' and msg.ruling != 'struck' %}
+                                            <a class="chat-source" href="{{ path('app_prospect_show', {id: prospect.id}) }}#evidence-{{ source.id }}">{{ source.label }}</a>
+                                        {% elseif source.kind == 'precedent' and msg.ruling != 'struck' %}
+                                            <a class="chat-source" href="{{ path('app_memory') }}">{{ source.label }}</a>
+                                        {% else %}
+                                            <span class="chat-source">{{ source.label }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="chat-clerk">{{ icons.icon(msg.ruling == 'struck' ? 'x' : (msg.ruling == 'precedent' ? 'bookmark' : 'check'), 13) }}{{ msg.verdict }}</div>
+                    </div>
+                </li>
+            {% else %}
+                {% if case.status != 'pending' %}<li class="chat-system" data-key="empty">Neither side made a point the clerk could review.</li>{% endif %}
+            {% endfor %}
+            {% if transcript.rebuttal_skipped ?? null %}<li class="chat-system" data-key="rebuttal-skipped">{{ transcript.rebuttal_skipped }}</li>{% endif %}
+            {% set live = transcript.live ?? null %}
+            {% if case.status == 'pending' and live and live.speaker %}
+                {% set side = live.speaker == 'skeptic' ? 'skeptic' : 'advocate' %}
+                <li class="chat-msg from-{{ side }} is-typing" data-key="typing" aria-live="polite">
+                    <span class="chat-avatar" aria-hidden="true">{{ side == 'advocate' ? 'A' : 'S' }}</span>
+                    <div class="chat-body">
+                        <div class="chat-name">{{ side == 'advocate' ? 'Advocate' : 'Skeptic' }}</div>
+                        <div class="chat-bubble chat-typing-bubble"><span class="chat-typing" aria-hidden="true"><i></i><i></i><i></i></span><span class="chat-activity">{{ side == 'advocate' ? 'Advocate' : 'Skeptic' }} {{ live.activity ?? 'is typing' }}…</span></div>
+                    </div>
+                </li>
+            {% endif %}

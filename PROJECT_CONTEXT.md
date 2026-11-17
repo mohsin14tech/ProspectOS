@@ -1,5 +1,36 @@
 # ProspectOS — Project Context / Session Handoff
 
+## Current authoritative checkpoint — Phases 1–3 complete, 2026-11-17
+
+All four planned phases to compete for first place are done in code except the final video (Phase 4), which is in production from the owner's new voiceover (`var/video/v4/voiceover.mp3`, 85.8 s, script v3.1 in `docs/VIDEO_SCRIPT_V3.md`).
+
+- **Phase 1 (MCP depth)**: elicitation ruling, progress, resources, prompts, MCP App (see the checkpoint below and `docs/ARCHITECTURE.md`).
+- **Conversation view**: three-turn plain-language chat (Advocate opens, Skeptic replies per point, Advocate answers back).
+- **Phase 2**: live hearings (`/court/{id}/live` fragment + `court_live_controller.js`; `CourtCase::recordProgress()` saves the thread and "who is typing" after every turn and tool call); similar-lead precedents through Symfony AI Store (`PrecedentRetriever`, in-memory `Store` + `Retriever`, key-free `LexicalVectorizer`, pure vector ranking with `semanticRatio` 1.0).
+- **Phase 3**: zero-key demo (`RecordedHearings` replays recorded Groq hearings for the three demo leads through `MockPlatformFactory`, evidence referenced by content fingerprint; `app:court:record-demo` re-records; cases labelled "Recorded demo"); CI step "Zero-key demo hearing on a fresh clone"; `docs/JUDGES.md`. Upstream Symfony AI issues were not filed (external posting needs the owner's approval).
+- Tests: `composer test` 113 tests / 597 assertions / 1 skip.
+
+### Exact next task
+
+Finish the Phase 4 video from `var/video/v4/voiceover.mp3` (light theme, captions, shots per `docs/VIDEO_SCRIPT_V3.md`), then the owner reviews, pushes, and updates the YouTube video / hackathon submission.
+
+## Current authoritative checkpoint — Phase 1 "MCP depth", 2026-11-17
+
+Context: the project is submitted to the Symfony AI & MCP Hackathon 2026 (video published, repo public, main merged at `fa7cf8f`). A competitor review ranked ProspectOS about 5th of 20 complete entries, mainly for shallow MCP use. The owner approved a four-phase plan to compete for first place and asked to start Phase 1. Work is on branch `evidence-court` (not yet committed in this checkpoint).
+
+Phase 1 delivered (details in `docs/ARCHITECTURE.md`, Evidence Court section):
+
+- Human ruling over MCP **elicitation** (`request_ruling`), live **progress notifications** during hearings (one per counsel tool call), **resources** + resource templates (`prospectos://court/docket`, `prospectos://court/{caseId}`, `prospectos://lead/{leadId}/evidence`), **prompts** (`cross_examine`, `brief_me`) and an **MCP App** (`show_court_case` → `ui://evidence-court/hearing`), on both the STDIO demo server and the authenticated HTTP server.
+- New code: `src/Service/Court/McpCourtroom.php`, `src/Service/Court/CourtDocket.php`, `src/Mcp/Demo/DemoCourtRecords.php`, `src/Mcp/Demo/DemoCourtApp.php`, `src/Mcp/Workspace/CourtRecords.php`, `src/Mcp/Workspace/CourtApp.php`, `templates/mcp/*`; `config/packages/mcp.yaml` now registers tools, resources, resource_templates, prompts and apps per server.
+- Verified live: Groq gpt-oss-120b hearing #18 over STDIO streamed 9 progress notifications; ruling accepted through the elicitation form was saved as decision #7 "Evidence Court #18 (ruled in an MCP client): …"; decline paths verified on STDIO (protocols 2025-06-18, 2025-11-25, 2026-07-28) and authenticated HTTP (2025-11-25, 2026-07-28). The MCP App rendered in a minimal local MCP Apps host harness (handshake, size, open-link, tools/call all observed). **Not yet verified inside Claude Desktop/Claude Code's own UI** (elicitation form and MCP App rendering there).
+- Tests: `composer test` 106 tests / 511 assertions / 1 skip.
+
+Court as a conversation (same day, owner request): the hearing page is now a chat thread in plain language (Advocate left, Skeptic right, replies quote the point they answer, the Advocate answers back, the clerk's verdict under each message, a neutral "Where it landed" tally, then "Your turn"). Backend: three agent turns with reply links; see ARCHITECTURE. Live Groq cases #19–#21 checked; `composer test` 109 tests / 539 assertions / 1 skip.
+
+### Exact next task
+
+Owner reviews Phase 1 and the conversation view, then commit and push to `evidence-court` and open a PR. Ideally verify `request_ruling` and `show_court_case` inside Claude Desktop (owner's machine) and record a short clip. Then Phase 2 (cross-examination round, semantic precedents with Symfony AI Store, live Turbo Stream hearings) when the owner approves.
+
 ## Current authoritative checkpoint — final hackathon video produced, 2026-11-16
 
 This supersedes prior next-task statements about recording the video. The final submission video, captions, thumbnail and QA sheets are in ignored `var/video/`:

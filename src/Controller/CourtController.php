@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Message\HearCourtCase;
 use App\Service\AiProviderConfiguration;
 use App\Service\CurrentWorkspaceProvider;
+use App\Service\Court\CourtConversation;
 use App\Service\Court\EvidenceCourt;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,15 +24,18 @@ use Symfony\Component\Routing\Attribute\Route;
 final class CourtController extends AbstractController
 {
     #[Route('/court', name: 'app_court', methods: ['GET'])]
-    public function index(CurrentWorkspaceProvider $workspaceProvider, EntityManagerInterface $entityManager, AiProviderConfiguration $ai): Response
+    public function index(CurrentWorkspaceProvider $workspaceProvider, EntityManagerInterface $entityManager, AiProviderConfiguration $ai, EvidenceCourt $court): Response
     {
         $workspace = $workspaceProvider->get();
+        $prospects = $entityManager->getRepository(Prospect::class)->findBy(['workspace' => $workspace], ['updatedAt' => 'DESC'], 12);
 
         return $this->render('court/index.html.twig', [
             'workspace' => $workspace,
             'cases' => $entityManager->getRepository(CourtCase::class)->findBy(['workspace' => $workspace], ['createdAt' => 'DESC'], 30),
-            'prospects' => $entityManager->getRepository(Prospect::class)->findBy(['workspace' => $workspace], ['updatedAt' => 'DESC'], 12),
+            'prospects' => $prospects,
             'aiReady' => $ai->isReady($workspace),
+            // Demo leads with a recorded hearing can be opened without an AI key.
+            'replayable' => array_map(static fn (Prospect $p): int => (int) $p->getId(), array_values(array_filter($prospects, $court->isReplay(...)))),
         ]);
     }
 
@@ -77,20 +81,50 @@ final class CourtController extends AbstractController
     }
 
     #[Route('/court/{id}', name: 'app_court_show', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function show(int $id, CurrentWorkspaceProvider $workspaceProvider, EntityManagerInterface $entityManager): Response
+    public function show(int $id, Request $request, CurrentWorkspaceProvider $workspaceProvider, EntityManagerInterface $entityManager, CourtConversation $conversation): Response
     {
-        $workspace = $workspaceProvider->get();
-        $case = $entityManager->getRepository(CourtCase::class)->findOneBy(['id' => $id, 'workspace' => $workspace]);
+        $case = $this->findCase($id, $workspaceProvider, $entityManager);
+
+        return $this->render('court/show.html.twig', $this->view($case, $conversation) + [
+            'workspace' => $workspaceProvider->get(),
+            // A hearing watched live has already "played"; do not animate it again on arrival.
+            'animate' => !$request->query->getBoolean('watched'),
+        ]);
+    }
+
+    /** Fragment polled by the live court page while a hearing runs. */
+    #[Route('/court/{id}/live', name: 'app_court_live', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function live(int $id, CurrentWorkspaceProvider $workspaceProvider, EntityManagerInterface $entityManager, CourtConversation $conversation): Response
+    {
+        $case = $this->findCase($id, $workspaceProvider, $entityManager);
+        $response = $this->render('court/_live.html.twig', $this->view($case, $conversation));
+        $response->headers->set('Cache-Control', 'no-store');
+
+        return $response;
+    }
+
+    private function findCase(int $id, CurrentWorkspaceProvider $workspaceProvider, EntityManagerInterface $entityManager): CourtCase
+    {
+        $case = $entityManager->getRepository(CourtCase::class)->findOneBy(['id' => $id, 'workspace' => $workspaceProvider->get()]);
         if (!$case instanceof CourtCase) {
             throw $this->createNotFoundException('Court case not found.');
         }
 
-        return $this->render('court/show.html.twig', [
-            'workspace' => $workspace,
+        return $case;
+    }
+
+    /** @return array<string, mixed> */
+    private function view(CourtCase $case, CourtConversation $conversation): array
+    {
+        $transcript = $case->getTranscript();
+
+        return [
             'case' => $case,
             'prospect' => $case->getProspect(),
-            'transcript' => $case->getTranscript(),
-        ]);
+            'transcript' => $transcript,
+            'messages' => isset($transcript['advocate']) ? $conversation->messages($transcript) : [],
+            'bottom' => isset($transcript['advocate'], $transcript['skeptic']) ? $conversation->bottomLine($transcript) : null,
+        ];
     }
 
     #[Route('/court/{id}/ruling', name: 'app_court_rule', requirements: ['id' => '\d+'], methods: ['POST'])]

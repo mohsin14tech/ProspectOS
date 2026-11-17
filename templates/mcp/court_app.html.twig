@@ -1,0 +1,68 @@
+{#
+    MCP App shell for an Evidence Court hearing (ui://evidence-court/hearing).
+    The host (for example Claude) renders it in a sandboxed iframe. The bundle's bridge does the
+    MCP Apps handshake; each tool result carries server-rendered HTML (mcp/_court_card.html.twig)
+    that lands in #root. Fully self-contained: no external fonts, scripts or images.
+#}
+{% extends '@Mcp/app/base.html.twig' %}
+
+{% block title %}Evidence Court{% endblock %}
+
+{% block body %}<div id="root"><p class="ec-wait">Waiting for the hearing&hellip;</p></div>{% endblock %}
+
+{% block style %}
+:root {
+    --bg: #ffffff; --ink: #15171e; --muted: #5d6270; --line: #e6e8ee; --soft: #f5f6f9;
+    --adv: #2456d6; --adv-soft: #eaf0ff; --skp: #b86e00;
+    --ok: #1b8048; --ok-soft: #e6f6ec; --bad: #c42127; --bad-soft: #fdecec; --hl: #ffd54a;
+    color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+    :root { --bg: #14161c; --ink: #eef0f5; --muted: #a2a8b6; --line: #2a2e38; --soft: #1b1e26;
+        --adv: #86a8ff; --adv-soft: #1b2440; --skp: #ffb547;
+        --ok: #5fd08f; --ok-soft: #12301f; --bad: #ff7a7a; --bad-soft: #3b1f21; --hl: #8a6d00; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+#root { padding: 16px; }
+.ec-wait { color: var(--muted); margin: 0; }
+.ec-head { display: flex; gap: 12px; align-items: center; }
+.ec-head svg { flex: none; }
+.ec-kicker { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 650; }
+.ec-title { margin: 2px 0 0; font-size: 18px; line-height: 1.25; font-weight: 750; letter-spacing: -.01em; }
+.ec-pill { display: inline-block; margin-left: auto; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 650; background: var(--soft); border: 1px solid var(--line); white-space: nowrap; }
+.ec-pill.is-ruled { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.ec-pill.is-failed { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.ec-meta { margin: 10px 0 14px; color: var(--muted); font-size: 12.5px; }
+.ec-sides { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 560px) { .ec-sides { grid-template-columns: 1fr; } }
+.ec-side { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--soft); }
+.ec-side h3 { margin: 0 0 6px; font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
+.ec-side.adv h3 { color: var(--adv); }
+.ec-side.skp h3 { color: var(--skp); }
+.ec-tally { font-weight: 600; color: var(--muted); }
+.ec-tools { margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.ec-tools code { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.ec-claims { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ec-claim { padding: 8px 10px; border-radius: 9px; background: var(--bg); border-left: 3px solid var(--ok); }
+.ec-claim .t { margin: 0; }
+.ec-claim .q { margin: 0 0 3px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.ec-claim.admitted .t span { background: linear-gradient(transparent 58%, color-mix(in srgb, var(--hl) 55%, transparent) 58%); }
+.ec-claim.precedent { border-left-color: var(--adv); }
+.ec-claim.struck { border-left-color: var(--bad); }
+.ec-claim.struck .t { text-decoration: line-through; color: var(--muted); }
+.ec-claim .r { margin-top: 4px; font-size: 11.5px; font-weight: 650; }
+.ec-claim.admitted .r { color: var(--ok); }
+.ec-claim.precedent .r { color: var(--adv); }
+.ec-claim.struck .r { color: var(--bad); }
+.ec-claim .n { font-weight: 450; color: var(--muted); }
+.ec-verdict { margin-top: 14px; padding: 12px; border-radius: 12px; border: 1px dashed var(--line); }
+.ec-verdict.is-ruled { border-style: solid; background: var(--ok-soft); border-color: transparent; }
+.ec-verdict p { margin: 0; }
+.ec-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.ec-btn { font: inherit; font-weight: 650; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.ec-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.ec-btn:hover { filter: brightness(1.06); }
+.ec-notice { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--adv-soft); font-size: 13px; }
+.ec-foot { margin: 12px 0 0; font-size: 11.5px; color: var(--muted); }
+{% endblock %}

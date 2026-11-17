@@ -127,11 +127,18 @@ final class WorkspaceMcpTest extends WebTestCase
         ], json_encode(['jsonrpc' => '2.0', 'id' => 5, 'method' => 'tools/list'], JSON_THROW_ON_ERROR));
 
         self::assertResponseIsSuccessful();
-        $tools = array_column(json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR)['result']['tools'], 'name');
+        $definitions = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR)['result']['tools'];
+        $tools = array_column($definitions, 'name');
         self::assertContains('open_evidence_court', $tools);
         self::assertContains('get_court_case', $tools);
-        foreach ($tools as $tool) {
-            self::assertDoesNotMatchRegularExpression('/rul|decide|approve|send/i', $tool, 'MCP clients must never be able to rule, decide, approve or send.');
+        self::assertContains('request_ruling', $tools);
+        self::assertContains('show_court_case', $tools);
+        foreach ($definitions as $tool) {
+            self::assertDoesNotMatchRegularExpression('/decide|approve|send/i', $tool['name'], 'MCP clients must never be able to decide, approve or send.');
+            // A model can ask for a ruling but can never supply one: the decision only comes back
+            // from the human's elicitation form, so no tool accepts it as an argument.
+            $arguments = array_keys($tool['inputSchema']['properties'] ?? []);
+            self::assertEmpty(array_intersect(['decision', 'ruling', 'reason', 'verdict'], $arguments), $tool['name'].' must not accept a ruling as an argument.');
         }
     }
 }

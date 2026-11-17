@@ -44,11 +44,15 @@ final class HearCourtCaseCommand
         }
 
         $io->title(sprintf('Evidence Court #%d: %s', $case->getId(), $prospect->getName()));
-        foreach (['advocate' => 'Advocate', 'skeptic' => 'Skeptic'] as $side => $label) {
-            $argument = $case->getTranscript()[$side];
+        foreach (['advocate' => 'Advocate opens', 'skeptic' => 'Skeptic replies', 'rebuttal' => 'Advocate answers back'] as $side => $label) {
+            $argument = $case->getTranscript()[$side] ?? null;
+            if (null === $argument) {
+                continue;
+            }
             $io->section(sprintf('%s (tools used: %s)', $label, implode(', ', array_map(static fn (array $call): string => $call['tool'].($call['argument'] ? '('.$call['argument'].')' : ''), $argument['tool_calls'])) ?: 'none'));
             foreach ($argument['claims'] as $claim) {
-                $io->writeln(sprintf('  [%s] %s %s', strtoupper($claim['ruling']), $claim['text'], $claim['citations'] ? '['.implode(', ', $claim['citations']).']' : ''));
+                $to = isset($claim['reply_to']) ? ('rebuttal' === $side ? '(to S' : '(to A').($claim['reply_to'] + 1).') ' : '';
+                $io->writeln(sprintf('  [%s] %s%s %s', strtoupper($claim['ruling']), $to, $claim['text'], $claim['citations'] ? '['.implode(', ', $claim['citations']).']' : ''));
                 $io->writeln('      '.$claim['note']);
             }
         }

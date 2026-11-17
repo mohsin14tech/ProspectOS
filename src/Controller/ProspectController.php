@@ -24,7 +24,7 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 final class ProspectController extends AbstractController
 {
     #[Route('/prospects/{id}', name: 'app_prospect_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
-    public function show(int $id, EntityManagerInterface $entityManager, CurrentWorkspaceProvider $workspaceProvider, AiProviderConfiguration $ai, ProspectMemory $memory): Response
+    public function show(int $id, EntityManagerInterface $entityManager, CurrentWorkspaceProvider $workspaceProvider, AiProviderConfiguration $ai, ProspectMemory $memory, \App\Service\Court\EvidenceCourt $court): Response
     {
         $workspace = $workspaceProvider->get();
         $prospect = $entityManager->getRepository(Prospect::class)->findOneBy([
@@ -60,6 +60,8 @@ final class ProspectController extends AbstractController
             'memoryExamples' => $memory->relevantDecisions($workspace, $prospect),
             'gmailConnection' => $entityManager->getRepository(GmailConnection::class)->findOneBy(['workspace' => $workspace]),
             'aiConfigured' => $ai->isReady($workspace),
+            'courtReady' => $court->isReady($prospect),
+            'courtReplay' => $court->isReplay($prospect),
             'aiProvider' => $ai->providerName($workspace),
             'aiModel' => $ai->modelName($workspace),
             'aiTier' => $ai->tierLabel($workspace),
