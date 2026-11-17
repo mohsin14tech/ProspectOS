@@ -7,13 +7,16 @@ namespace App\Service;
 use App\Entity\Prospect;
 use App\Entity\ProspectDecision;
 use App\Entity\Workspace;
+use App\Service\Memory\PrecedentRetriever;
 use Doctrine\ORM\EntityManagerInterface;
 
 /** Small, inspectable workspace memory built from human-reviewed decisions. */
 final class ProspectMemory
 {
-    public function __construct(private readonly EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly PrecedentRetriever $retriever = new PrecedentRetriever(),
+    ) {
     }
 
     /** @return list<ProspectDecision> */
@@ -41,7 +44,17 @@ final class ProspectMemory
             return $categoryIsSpecific || $locationIsSpecific;
         }));
 
-        return array_slice($relevant, 0, max(1, min(20, $limit)));
+        $limit = max(1, min(20, $limit));
+        $relevant = array_slice($relevant, 0, $limit);
+
+        // Then fill with decisions about similar leads, ranked by Symfony AI Store (vector query).
+        $taken = array_map(static fn (ProspectDecision $decision): int => (int) $decision->getId(), $relevant);
+        $others = array_values(array_filter($decisions, static fn (ProspectDecision $decision): bool => $decision->getProspect()->getId() !== $prospect->getId() && !\in_array((int) $decision->getId(), $taken, true)));
+        foreach ($this->retriever->similar($prospect, $others, $limit - \count($relevant)) as $match) {
+            $relevant[] = $match['decision'];
+        }
+
+        return $relevant;
     }
 
     /** @return array<string, int> */

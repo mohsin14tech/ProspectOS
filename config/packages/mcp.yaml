@@ -1,5 +1,7 @@
 mcp:
     servers:
+        # Local STDIO server for MCP clients such as Claude Desktop / Claude Code.
+        # Only ever touches the fictional demo workspace.
         prospectos:
             name: 'ProspectOS'
             transports:
@@ -7,6 +9,11 @@ mcp:
                 http: false
             registry:
                 tools: ['App\Mcp\DemoWorkspaceSummaryTool', 'App\Mcp\Demo\']
+                resources: ['App\Mcp\Demo\']
+                resource_templates: ['App\Mcp\Demo\']
+                prompts: ['App\Mcp\Demo\']
+                apps: ['App\Mcp\Demo\']
+        # Authenticated Streamable HTTP server, scoped to the signed-in user's workspace.
         workspace:
             name: 'ProspectOS Workspace'
             transports:
@@ -16,3 +23,7 @@ mcp:
                 path: /mcp/workspace
             registry:
                 tools: ['App\Mcp\Workspace\']
+                resources: ['App\Mcp\Workspace\']
+                resource_templates: ['App\Mcp\Workspace\']
+                prompts: ['App\Mcp\Workspace\']
+                apps: ['App\Mcp\Workspace\']

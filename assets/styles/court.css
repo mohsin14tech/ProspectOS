@@ -141,3 +141,98 @@
     .court-ruling-form .button { justify-self: stretch; }
 }
 .court-status { white-space: nowrap; text-transform: none; }
+
+/* ---- Conversation view (2026-11-17): Advocate on the left, Skeptic replies on the right ---- */
+.court-chat { padding: 22px; margin-bottom: 18px; }
+.chat-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 18px; margin-bottom: 16px; }
+.chat-head h2 { margin: 0; font-size: 18px; }
+.chat-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; color: var(--subtle); font-size: 12.5px; }
+.chat-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.chat-dot { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; font-weight: 700; }
+.chat-dot.is-advocate { background: var(--court-for-soft); color: var(--court-for); }
+.chat-dot.is-skeptic { background: var(--court-against-soft); color: var(--court-against); }
+.chat-dot.is-clerk { background: var(--court-ok-soft); color: var(--court-ok); }
+
+.chat-thread { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.chat-system { align-self: center; max-width: 620px; padding: 8px 14px; border-radius: 999px; background: var(--surface-muted, rgba(127,127,127,.08)); color: var(--subtle); font-size: 13px; line-height: 1.45; text-align: center; }
+
+.chat-msg { display: flex; gap: 10px; align-items: flex-start; max-width: min(640px, 88%); }
+.chat-msg.from-skeptic { align-self: flex-end; flex-direction: row-reverse; }
+.chat-avatar { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-weight: 700; font-size: 14px; background: var(--court-for-soft); color: var(--court-for); }
+.from-skeptic .chat-avatar { background: var(--court-against-soft); color: var(--court-against); }
+.chat-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.from-skeptic .chat-body { align-items: flex-end; }
+.chat-name { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 650; color: var(--court-for); }
+.from-skeptic .chat-name { color: var(--court-against); }
+.chat-label { padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--subtle); border: 1px solid var(--border); }
+.chat-checked { display: inline-flex; align-items: center; gap: 5px; color: var(--subtle); font-size: 12px; }
+
+.chat-bubble { padding: 11px 14px; border-radius: 4px 16px 16px 16px; background: var(--court-for-soft); color: var(--text, inherit); line-height: 1.5; }
+.from-skeptic .chat-bubble { border-radius: 16px 4px 16px 16px; background: var(--court-against-soft); }
+.chat-text { margin: 0; font-size: 15px; }
+.chat-quote { margin: 0 0 8px; padding: 6px 10px; border-left: 3px solid var(--court-for); border-radius: 6px; background: rgba(255,255,255,.55); color: var(--subtle); font-size: 12.5px; line-height: 1.4; }
+.chat-quote.from-skeptic { border-left-color: var(--court-against); }
+:root[data-theme="dark"] .chat-quote { background: rgba(0,0,0,.22); }
+.chat-quote b { display: block; margin-bottom: 1px; color: var(--text, inherit); font-weight: 650; }
+.chat-sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chat-source { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); color: inherit; text-decoration: none; }
+a.chat-source:hover { border-color: currentColor; }
+.chat-clerk { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--court-ok); }
+.chat-msg.is-precedent .chat-clerk { color: var(--court-for); }
+
+/* Removed by the clerk: visibly crossed out, still readable so the person sees what was tried. */
+.chat-msg.is-struck .chat-bubble { background: transparent; border: 1px dashed var(--court-struck); }
+.chat-msg.is-struck .chat-text { text-decoration: line-through; text-decoration-thickness: 1.5px; color: var(--subtle); }
+.chat-msg.is-struck .chat-clerk { color: var(--court-struck); }
+/* Proven messages get the brand highlighter. */
+.chat-msg.is-admitted .chat-text { background: linear-gradient(transparent 62%, rgba(255, 213, 74, .45) 62%); }
+:root[data-theme="dark"] .chat-msg.is-admitted .chat-text { background: linear-gradient(transparent 62%, rgba(255, 213, 74, .22) 62%); }
+
+.chat-bottom { margin-top: 20px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); }
+.chat-bottom h3 { margin: 0 0 2px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--subtle); }
+.chat-headline { margin: 0 0 10px; font-size: 17px; font-weight: 650; }
+.chat-tally .is-for { color: var(--court-for); }
+.chat-tally .is-against { color: var(--court-against); }
+.chat-tally { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.chat-tally strong { font-size: 18px; margin-right: 3px; }
+.chat-hint { margin: 10px 0 0; color: var(--subtle); font-size: 13px; }
+
+/* Typing indicator while the hearing runs */
+.chat-typing { flex: none; display: inline-flex; gap: 5px; padding: 12px 14px; border-radius: 16px; background: var(--court-for-soft); }
+.chat-typing i { width: 8px; height: 8px; border-radius: 50%; background: var(--court-for); animation: chat-bounce 1.2s infinite ease-in-out; }
+.chat-typing i:nth-child(2) { animation-delay: .15s; }
+.chat-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes chat-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+/* First read of an unruled case: messages arrive one after another, like a chat. */
+.court-chat.is-fresh .chat-system, .court-chat.is-fresh .chat-msg, .court-chat.is-fresh .chat-bottom { animation: chat-in .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 380ms); }
+@keyframes chat-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .court-chat.is-fresh .chat-system, .court-chat.is-fresh .chat-msg, .court-chat.is-fresh .chat-bottom { animation: none; }
+    .chat-typing i { animation: none; opacity: .8; }
+}
+@media (max-width: 640px) {
+    .court-chat { padding: 16px; }
+    .chat-msg { max-width: 100%; }
+    .chat-msg.from-skeptic { padding-left: 18px; }
+    .chat-msg.from-advocate { padding-right: 18px; }
+    .chat-text { font-size: 14.5px; }
+}
+
+/* Live hearing */
+.chat-live-dot { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 2px 9px; border-radius: 999px; background: var(--court-struck-soft); color: var(--court-struck); font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.chat-live-dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: chat-pulse 1.4s infinite; }
+@keyframes chat-pulse { 50% { opacity: .3; } }
+.chat-live-note { margin: 4px 0 0; color: var(--subtle); font-size: 13px; flex-basis: 100%; }
+.chat-typing-bubble { display: inline-flex; align-items: center; gap: 10px; padding: 9px 14px; }
+.chat-typing-bubble .chat-typing { padding: 0; background: transparent; }
+.from-skeptic .chat-typing i { background: var(--court-against); }
+.chat-activity { color: var(--subtle); font-size: 13.5px; font-style: italic; }
+.chat-msg.is-arriving { animation: chat-in .45s cubic-bezier(.2, .8, .2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+    .chat-live-dot::before, .chat-msg.is-arriving { animation: none; }
+}
+
+/* Zero-key demo replay label */
+.court-replay-note { margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; border: 1px dashed var(--border); background: var(--surface); color: var(--subtle); font-size: 13.5px; line-height: 1.5; }
+.court-replay-note strong { color: inherit; color: var(--court-against); }

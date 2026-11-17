@@ -24,10 +24,10 @@
                 <h2 id="court-cta-title">Put this lead on trial</h2>
                 <p>An AI Advocate and an AI Skeptic argue from the sources below. Claims without a citation are struck automatically. You rule.</p>
             </div>
-            {% if aiConfigured %}
+            {% if courtReady %}
                 <form method="post" action="{{ path('app_court_open', {id: prospect.id}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('court_open_' ~ prospect.id) }}">
-                    <button class="button button-primary" type="submit">{{ icons.icon('scale', 16) }}Open Evidence Court</button>
+                    <button class="button button-primary" type="submit">{{ icons.icon('scale', 16) }}{{ courtReplay ? 'Watch a recorded hearing' : 'Open Evidence Court' }}</button>
                 </form>
             {% else %}
                 <a class="button button-secondary" href="{{ path('app_integrations_ai') }}">Connect AI to open court</a>

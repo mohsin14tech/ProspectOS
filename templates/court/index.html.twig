@@ -26,7 +26,7 @@
     <section class="panel court-setup" role="note">
         <div>
             <h2>Connect an AI model first</h2>
-            <p>Counsel need a tested AI connection. A free cloud key (Groq or Hugging Face) takes about a minute; local Ollama works offline.</p>
+            <p>Counsel need a tested AI connection. A free cloud key (Groq or Hugging Face) takes about a minute; local Ollama works offline.{% if workspace.slug == 'demo' %} Until then, the three demo leads replay recorded hearings so you can see how it works.{% endif %}</p>
         </div>
         <a class="button button-primary" href="{{ path('app_integrations_ai') }}">Connect AI</a>
     </section>
@@ -44,7 +44,7 @@
                         <div><a href="{{ path('app_prospect_show', {id: prospect.id}) }}"><strong>{{ prospect.name }}</strong></a><small>{{ prospect.category }} · {{ prospect.location }} · {{ prospect.status|replace({'_': ' '})|title }}</small></div>
                         <form method="post" action="{{ path('app_court_open', {id: prospect.id}) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('court_open_' ~ prospect.id) }}">
-                            <button class="button button-secondary" type="submit" {{ aiReady ? '' : 'disabled' }}>{{ icons.icon('scale', 16) }}Open hearing</button>
+                            <button class="button button-secondary" type="submit" {{ aiReady or prospect.id in replayable ? '' : 'disabled' }}>{{ icons.icon('scale', 16) }}{{ prospect.id in replayable ? 'Watch recorded hearing' : 'Open hearing' }}</button>
                         </form>
                     </li>
                 {% endfor %}

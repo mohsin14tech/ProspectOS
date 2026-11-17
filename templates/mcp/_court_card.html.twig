@@ -1,0 +1,54 @@
+{# Server-rendered body of the Evidence Court MCP App; context comes from CourtDocket::card(). #}
+{% set labels = {admitted: 'Admitted', precedent: 'Admitted as precedent', struck: 'Struck'} %}
+<div class="ec-head">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#ffd54a"/><path d="M11 24V10h6.5a4.5 4.5 0 0 1 0 9H11" stroke="#15171e" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="23.5" r="2.2" fill="#15171e"/></svg>
+    <div>
+        <div class="ec-kicker">Evidence Court · case {{ hearing.case_id }}</div>
+        <h2 class="ec-title">Should we pursue {{ hearing.lead.name }}?</h2>
+    </div>
+    <span class="ec-pill is-{{ hearing.status }}">{{ hearing.status|capitalize }}</span>
+</div>
+<p class="ec-meta">{% if hearing.model %}Argued by two Symfony AI agents on {{ hearing.model }}. {% endif %}A deterministic clerk struck every claim without a valid citation.</p>
+
+{% if hearing.failure %}
+    <div class="ec-notice">{{ hearing.failure }}</div>
+{% endif %}
+
+<div class="ec-sides">
+    {% for side, meta in {advocate: {label: 'Advocate opens', css: 'adv'}, skeptic: {label: 'Skeptic replies', css: 'skp'}, rebuttal: {label: 'Advocate answers back', css: 'adv'}} %}
+        {% set s = attribute(hearing, side) %}
+        {% if s %}
+            <section class="ec-side {{ meta.css }}">
+                <h3>{{ meta.label }} <span class="ec-tally">{{ s.admitted }} admitted · {{ s.struck }} struck</span></h3>
+                {% if s.tools_called is not empty %}
+                    <p class="ec-tools">{% for call in s.tools_called %}<code>{{ call }}</code>{% endfor %}</p>
+                {% endif %}
+                <ul class="ec-claims">
+                    {% for claim in s.claims %}
+                        <li class="ec-claim {{ claim.ruling }}">
+                            {% if claim.replies_to is defined %}<p class="q">Replying to {{ claim.replies_to }}</p>{% endif %}<p class="t"><span>{{ claim.claim }}</span></p>
+                            <div class="r">{{ labels[claim.ruling]|default(claim.ruling) }}{% if claim.citations is not empty %} · {{ claim.citations|join(', ') }}{% endif %}{% if claim.ruling == 'struck' and claim.clerk_note %} <span class="n">({{ claim.clerk_note|replace({'Struck: ': ''}) }})</span>{% endif %}</div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+    {% endfor %}
+</div>
+
+{% if hearing.ruling %}
+    <div class="ec-verdict is-ruled"><p><strong>Human ruling: {{ decisions[hearing.ruling.decision]|default(hearing.ruling.decision) }}.</strong> {{ hearing.ruling.reason }}</p></div>
+{% elseif hearing.status == 'argued' %}
+    <div class="ec-verdict"><p>No ruling yet. Only a person can rule: the button opens a form in your MCP client, and only your answer is recorded.</p></div>
+{% endif %}
+
+{% if notice %}<div class="ec-notice">{{ notice }}</div>{% endif %}
+
+<div class="ec-actions">
+    {% if hearing.status == 'argued' %}
+        <button type="button" class="ec-btn primary" data-call="rule_from_card" data-arg-case-id="{{ hearing.case_id }}">Rule on this case</button>
+    {% endif %}
+    <button type="button" class="ec-btn" data-call="refresh_court_card" data-arg-case-id="{{ hearing.case_id }}">Refresh</button>
+    <button type="button" class="ec-btn" data-open="{{ case_url }}">Open in ProspectOS</button>
+</div>
+<p class="ec-foot">AI argues. Code checks citations. You decide.</p>

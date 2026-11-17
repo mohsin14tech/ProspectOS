@@ -34,6 +34,9 @@ final class CaseFileTools
     /** @var array<int, true> */
     private array $read = [];
 
+    /** @var (\Closure(string, ?string): void)|null */
+    private ?\Closure $onCall = null;
+
     /**
      * @param list<EvidenceItem>     $evidence
      * @param list<ProspectDecision> $precedents
@@ -58,7 +61,7 @@ final class CaseFileTools
     public function readEvidence(string $evidence_id): string
     {
         $id = (int) preg_replace('/\D/', '', $evidence_id);
-        $this->calls[] = ['tool' => 'read_evidence', 'argument' => 'E'.$id];
+        $this->log('read_evidence', 'E'.$id);
         $item = $this->evidence[$id] ?? null;
         if (null === $item) {
             return json_encode(['error' => 'No evidence record E'.$id.' exists in this case file.'], JSON_THROW_ON_ERROR);
@@ -79,7 +82,7 @@ final class CaseFileTools
 
     public function scoreBreakdown(): string
     {
-        $this->calls[] = ['tool' => 'score_breakdown', 'argument' => null];
+        $this->log('score_breakdown', null);
         if (null === $this->score) {
             return json_encode(['score' => null, 'note' => 'No score has been calculated for this lead.'], JSON_THROW_ON_ERROR);
         }
@@ -94,7 +97,7 @@ final class CaseFileTools
 
     public function teamPrecedents(): string
     {
-        $this->calls[] = ['tool' => 'team_precedents', 'argument' => null];
+        $this->log('team_precedents', null);
         if ([] === $this->precedents) {
             return json_encode(['precedents' => [], 'note' => 'The team has not decided on a similar lead yet.'], JSON_THROW_ON_ERROR);
         }
@@ -138,6 +141,20 @@ final class CaseFileTools
     public function readEvidenceIds(): array
     {
         return array_keys($this->read);
+    }
+
+    /** Lets the court report each tool call live (for example as MCP progress) while counsel is still thinking. */
+    public function observe(?\Closure $onCall): void
+    {
+        $this->onCall = $onCall;
+    }
+
+    private function log(string $tool, ?string $argument): void
+    {
+        $this->calls[] = ['tool' => $tool, 'argument' => $argument];
+        if (null !== $this->onCall) {
+            ($this->onCall)($tool, $argument);
+        }
     }
 
     /** @return list<array{tool: string, argument: string|null}> */

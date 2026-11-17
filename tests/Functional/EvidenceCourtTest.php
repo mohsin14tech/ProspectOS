@@ -43,14 +43,18 @@ final class EvidenceCourtTest extends WebTestCase
                 return new TextResult("- The menu is only a downloadable PDF. [E{$evidenceId}]\n- They will surely sign this month.");
             }
 
-            return new TextResult("- The menu is only a downloadable PDF. [E{$evidenceId}]\n- The source is synthetic and unverified. [E{$evidenceId}]\n- Their budget is tiny. [E424242]");
+            if (3 === $requests) {
+                return new TextResult("- To 1: The menu is only a downloadable PDF. [E{$evidenceId}]\n- To 1: The source is synthetic and unverified. [E{$evidenceId}]\n- Also: Their budget is tiny. [E424242]");
+            }
+
+            return new TextResult("- To S2: Fair point, it is sample data. A quick call would confirm the menu. [E{$evidenceId}]");
         });
 
         $court = static::getContainer()->get(EvidenceCourt::class);
         $case = $court->hear($court->open($prospect, null), $platform, 'mock-model');
 
         self::assertSame(CourtCase::STATUS_ARGUED, $case->getStatus(), (string) $case->getFailure());
-        self::assertSame(3, $requests, 'Advocate: tool call + answer; Skeptic: answer.');
+        self::assertSame(4, $requests, 'Advocate: tool call + opening; Skeptic: reply; Advocate: rebuttal.');
         self::assertTrue($toolResultSeen, 'The read_evidence result is passed back to the model.');
 
         $advocate = $case->getTranscript()['advocate'];
@@ -63,6 +67,70 @@ final class EvidenceCourtTest extends WebTestCase
         self::assertStringContainsString('repeats the Advocate', $skeptic['claims'][0]['note']);
         self::assertStringContainsString('E424242', $skeptic['claims'][2]['note']);
         self::assertSame(1, $skeptic['admitted']);
+        // The conversation is threaded: "To 1:" answers Advocate point 1, "Also:" is a new concern.
+        self::assertSame([0, 0, null], array_column($skeptic['claims'], 'reply_to'));
+        self::assertSame('The source is synthetic and unverified.', $skeptic['claims'][1]['text'], 'Reply prefixes are removed from the message.');
+
+        $rebuttal = $case->getTranscript()['rebuttal'];
+        self::assertSame(1, $rebuttal['claims'][0]['reply_to'], '"To S2:" answers the second Skeptic reply.');
+        self::assertSame(CitationClerk::ADMITTED, $rebuttal['claims'][0]['ruling']);
+        self::assertStringStartsWith('Fair point', $rebuttal['claims'][0]['text']);
+        self::assertSame('Skeptic reply 2', EvidenceCourt::describe($case)['rebuttal']['claims'][0]['replies_to']);
+    }
+
+    public function testAFailedRebuttalStillLeavesTheOpeningAndReply(): void
+    {
+        static::createClient();
+        [, , , $prospect, $evidence] = $this->makeCase();
+        $requests = 0;
+        $platform = MockPlatformFactory::createPlatform(function () use (&$requests, $evidence) {
+            return match (++$requests) {
+                1 => new TextResult('- The menu is only a downloadable PDF. [E'.$evidence->getId().']'),
+                2 => new TextResult('- To 1: Nobody has confirmed who runs the cafe. [E'.$evidence->getId().']'),
+                default => throw new \RuntimeException('provider hiccup'),
+            };
+        });
+        $container = static::getContainer();
+        $court = new EvidenceCourt($container->get(EntityManagerInterface::class), $container->get(\App\Service\AiProviderConfiguration::class),
+            $container->get(\App\Service\ProspectMemory::class), new CitationClerk(), new \Psr\Log\NullLogger(), static function (): void {});
+
+        $case = $court->hear($court->open($prospect, null), $platform, 'mock-model');
+
+        self::assertSame(CourtCase::STATUS_ARGUED, $case->getStatus(), (string) $case->getFailure());
+        self::assertSame(3, $requests, 'The rebuttal was attempted.');
+        self::assertSame(1, $case->getTranscript()['skeptic']['admitted']);
+        self::assertNull($case->getTranscript()['rebuttal']);
+        self::assertNull(EvidenceCourt::describe($case)['rebuttal']);
+    }
+
+    public function testHearingReportsStrictlyIncreasingProgressIncludingEachToolCall(): void
+    {
+        static::createClient();
+        [, , , $prospect, $evidence] = $this->makeCase();
+        $requests = 0;
+        $platform = MockPlatformFactory::createPlatform(function () use (&$requests, $evidence) {
+            if (1 === ++$requests) {
+                return new ToolCallResult([new ToolCall('call_1', 'read_evidence', ['evidence_id' => 'E'.$evidence->getId()])]);
+            }
+
+            return new TextResult('- The menu is a downloadable PDF. [E'.$evidence->getId().']');
+        });
+        $updates = [];
+
+        $court = static::getContainer()->get(EvidenceCourt::class);
+        $case = $court->hear($court->open($prospect, null), $platform, 'mock-model', static function (float $step, string $message) use (&$updates): void {
+            $updates[] = [$step, $message];
+        });
+
+        self::assertSame(CourtCase::STATUS_ARGUED, $case->getStatus(), (string) $case->getFailure());
+        $steps = array_column($updates, 0);
+        $sorted = $steps;
+        sort($sorted);
+        self::assertSame($sorted, $steps, 'MCP progress must never go backwards.');
+        self::assertCount(\count($steps), array_unique(array_map('strval', $steps)), 'MCP progress must strictly increase.');
+        self::assertSame((float) EvidenceCourt::PROGRESS_STEPS, end($steps));
+        self::assertContains('Advocate called read_evidence(E'.$evidence->getId().')', array_column($updates, 1));
+        self::assertStringContainsString('Awaiting a human ruling', end($updates)[1]);
     }
 
     public function testProviderRateLimitIsWaitedOutAndTheHearingCompletes(): void
@@ -142,7 +210,9 @@ final class EvidenceCourtTest extends WebTestCase
         $crawler = $client->request('GET', '/court/'.$case->getId());
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Should we pursue Court Cafe?');
-        self::assertSelectorTextContains('.court-advocate', 'Admitted');
+        self::assertSelectorTextContains('.chat-msg.from-advocate.is-admitted', 'PDF menu only.');
+        self::assertSelectorTextContains('.chat-msg.from-advocate .chat-clerk', 'Checked: backed by the proof shown');
+        self::assertSelectorTextContains('.chat-bottom', 'Where it landed');
 
         $client->submit($crawler->filter('form.court-ruling-form')->form([
             'decision' => ProspectDecision::DECISION_FINALIZED,
