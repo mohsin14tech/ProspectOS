@@ -17,7 +17,7 @@
                             {% if msg.quote %}
                                 <blockquote class="chat-quote from-{{ msg.quote.who|lower }}"><b>Replying to {{ msg.quote.who }} {{ msg.quote.label }}</b>{{ msg.quote.text }}</blockquote>
                             {% endif %}
-                            <p class="chat-text">{{ msg.text }}</p>
+                            <p class="chat-text"><span class="chat-hl">{{ msg.text }}</span></p>
                             {% if msg.sources is not empty %}
                                 <div class="chat-sources">
                                     {% for source in msg.sources %}

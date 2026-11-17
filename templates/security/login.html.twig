@@ -20,7 +20,7 @@
                 <input type="hidden" name="_username" value="{{ demoEmail }}">
                 <input type="hidden" name="_password" value="{{ demoPassword }}">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-                <button type="submit" class="button button-primary">Enter the demo workspace <span aria-hidden="true">→</span></button>
+                <button type="submit" class="button button-primary">Enter the demo workspace</button>
             </form>
         </section>
     {% endif %}
@@ -34,7 +34,7 @@
         <label for="password">Password</label>
         <input id="password" type="password" name="_password" autocomplete="current-password" required>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-        <button type="submit" class="button {{ demoEmail ? 'button-secondary' : 'button-primary' }}">Sign in <span aria-hidden="true">→</span></button>
+        <button type="submit" class="button {{ demoEmail ? 'button-secondary' : 'button-primary' }}">Sign in</button>
     </form>
     {% if not hasUsers and ownerSetupAvailable %}<p class="auth-footnote">First time here? <a href="{{ path('app_setup') }}">Set up the first owner workspace</a>.</p>{% elseif not hasUsers %}<p class="auth-footnote">Owner setup is disabled. The operator must configure the one-time setup token before creating the first account.</p>{% endif %}
 {% endblock %}

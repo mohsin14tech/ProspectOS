@@ -10,11 +10,10 @@
 <div class="page-heading prospect-report-heading">
     <div>
         <a class="text-link report-back" href="{{ path('app_dashboard') }}#prospects">{{ icons.icon('chevron-left', 16) }}Back to prospects</a>
-        <div class="eyebrow"><span class="eyebrow-dot"></span>Evidence brief · {{ prospect.sourceMode|replace({'_': ' '})|title }}</div>
         <h1>{{ prospect.name }}</h1>
         <p class="page-subtitle">{{ prospect.category }} · {{ prospect.location }}{% if prospect.canonicalDomain %} · {{ prospect.canonicalDomain }}{% endif %}</p>
+        <div class="report-tags">{% if prospect.sourceMode == 'web_search' %}<span class="status-tag">Unverified search candidate</span>{% elseif prospect.sourceMode == 'demo' %}<span class="status-tag">Synthetic sample</span>{% else %}<span class="status-tag status-completed">Website inspected</span>{% endif %}</div>
     </div>
-    {% if prospect.sourceMode == 'web_search' %}<span class="status-tag">Unverified search candidate</span>{% elseif prospect.sourceMode == 'demo' %}<span class="status-tag">Synthetic sample</span>{% else %}<span class="status-tag status-completed">Website inspected</span>{% endif %}
 </div>
 
 <div class="report-layout">
@@ -49,9 +48,9 @@
                 <button class="button button-primary" type="submit">Save decision</button>
             </form>
             {% if decisions is not empty %}
-                <h3>Decision history</h3>
+                <h3 class="decision-history-title">Decision history</h3>
                 <ol class="activity-list">
-                    {% for item in decisions %}<li class="activity-item"><span class="timeline-mark mark-research" aria-hidden="true">✓</span><div><strong>{{ item.decision|replace({'_': ' '})|title }}</strong><p>{{ item.reason }}</p><time>{{ item.actor.email }} · {{ item.createdAt|date('d M Y, H:i') }}</time></div></li>{% endfor %}
+                    {% for item in decisions %}<li class="activity-item"><span class="timeline-mark mark-research" aria-hidden="true">{{ icons.icon('check', 13) }}</span><div><strong>{{ item.decision|replace({'_': ' '})|title }}</strong><p>{{ item.reason }}</p><time>{{ item.actor.email }} · {{ item.createdAt|date('d M Y, H:i') }}</time></div></li>{% endfor %}
                 </ol>
             {% endif %}
         </section>
@@ -117,7 +116,7 @@
                 <button class="button button-primary" type="submit" {% if not aiConfigured or evidence is empty %}disabled{% endif %}>{{ summary ? 'Refresh evidence summary' : 'Generate evidence summary' }}</button>
             </form>
             {% if not aiConfigured %}<p class="integration-disclosure">AI is disabled or the selected provider is not configured. Review Integrations to choose a provider and store its credentials in the ignored app environment.</p>{% elseif evidence is empty %}<p class="integration-disclosure">Save source evidence before asking for a summary.</p>{% endif %}
-            {% if aiConfigured %}<p class="integration-disclosure">{{ aiProvider }} · {{ aiModel }} · {{ aiTier }}. {{ aiDisclosure }} Limited to 10 requests per signed-in user each hour.</p>{% endif %}
+            {% if aiConfigured %}<p class="integration-disclosure">{{ aiProvider }} · {{ aiModel }} · {{ aiTier|trim('.', 'right') }}. {{ aiDisclosure }} Limited to 10 requests per signed-in user each hour.</p>{% endif %}
         </section>
 
         <section class="panel origin-panel" aria-labelledby="origin-title">

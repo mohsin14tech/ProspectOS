@@ -1,0 +1,99 @@
+/* Command centre: a court docket, not a card grid.
+   One bordered pipeline strip, one docket of hearings awaiting a ruling, plain lists elsewhere. */
+:root { --for: #2456d6; --for-soft: #eaf0ff; --against: #a35c00; --against-soft: #fff1dc; }
+:root[data-theme="dark"] { --for: #86a8ff; --for-soft: #1b2440; --against: #ffb547; --against-soft: #33270f; }
+
+.dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 40px; margin: 4px 0 28px; }
+.dash-date { margin: 0 0 10px; color: var(--ink-3); font-size: 14px; font-weight: 550; }
+.dash-head h1 { max-width: 20ch; margin: 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(30px, 3.3vw, 46px); font-weight: 700; line-height: 1.04; letter-spacing: -0.035em; text-wrap: balance; }
+.dash-lede { max-width: 58ch; margin: 14px 0 0; color: var(--ink-2); font-size: 15.5px; line-height: 1.55; }
+.dash-actions { display: flex; flex: none; gap: 10px; }
+.dash-actions .button { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Pipeline: a real sequence, so it is numbered. One strip, four stations. */
+.pipeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 0 28px; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); overflow: hidden; }
+.pipeline li + li { border-left: 1px solid var(--line); }
+.pipeline a { position: relative; display: grid; grid-template-columns: auto 1fr; align-content: start; gap: 2px 10px; height: 100%; padding: 18px 22px 20px; color: inherit; text-decoration: none; transition: background-color .18s var(--ease-out); }
+.pipeline a:hover { background: var(--surface-2); }
+.pipeline a:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -4px; }
+.pipeline-step { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line-strong); color: var(--ink-3); font-size: 11.5px; font-weight: 700; }
+.pipeline-name { align-self: center; color: var(--ink-2); font-size: 13.5px; font-weight: 650; }
+.pipeline-count { grid-column: 1 / -1; margin-top: 14px; color: var(--ink); font-family: var(--font-display); font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.pipeline-note { grid-column: 1 / -1; margin-top: 6px; color: var(--ink-3); font-size: 13px; line-height: 1.4; }
+.pipeline-note strong { color: var(--highlight-ink); font-weight: 700; }
+/* The station that needs you gets the brand highlighter. */
+.pipeline li.is-waiting { background: var(--highlight-soft); }
+.pipeline li.is-waiting a:hover { background: color-mix(in srgb, var(--highlight-soft) 80%, var(--highlight)); }
+.pipeline li.is-waiting .pipeline-step { border-color: var(--ink); background: var(--ink); color: var(--highlight); }
+.pipeline li.is-waiting .pipeline-name { color: var(--ink); }
+
+.dash-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 28px; margin-bottom: 32px; }
+.dash-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.dash-section-head h2 { margin: 0; color: var(--ink); font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.dash-muted { margin: 0; color: var(--ink-3); font-size: 14px; }
+
+/* Docket: each hearing is a ticket you can open to rule. */
+.docket-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.docket-case { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "no lead weights go" "no meta weights go"; align-items: center; gap: 4px 16px; padding: 14px 16px 14px 18px; border: 1px solid var(--line); border-left: 4px solid var(--ink); border-radius: 14px; background: var(--surface); color: inherit; text-decoration: none; transition: border-color .18s var(--ease-out), transform .18s var(--ease-out); }
+.docket-case:hover { border-color: var(--line-strong); border-left-color: var(--highlight); transform: translateX(2px); }
+.docket-case:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+.docket-no { grid-area: no; color: var(--ink-3); font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.docket-lead { grid-area: lead; overflow: hidden; color: var(--ink); font-size: 15px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.docket-meta { grid-area: meta; color: var(--ink-3); font-size: 12.5px; }
+.docket-weights { grid-area: weights; display: flex; gap: 6px; }
+.docket-weights span { padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.w-for { background: var(--for-soft); color: var(--for); }
+.w-against { background: var(--against-soft); color: var(--against); }
+.docket-go { grid-area: go; display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font-size: 13px; font-weight: 700; }
+.docket-go .flip { transform: scaleX(-1); }
+.docket-empty { padding: 22px; border: 1px dashed var(--line-strong); border-radius: 16px; }
+.docket-empty p { max-width: 52ch; margin: 0 0 14px; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+
+/* Research activity: a plain timeline, no card. */
+.dash-activity .activity-list { margin: 0; padding: 0; list-style: none; }
+.dash-activity .activity-item { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.dash-activity .activity-item:first-child { border-top: 0; padding-top: 4px; }
+.dash-activity .timeline-mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; }
+.dash-activity strong { display: block; color: var(--ink); font-size: 13.5px; font-weight: 650; }
+.dash-activity p { margin: 2px 0 4px; color: var(--ink-2); font-size: 13px; line-height: 1.45; }
+.dash-activity time { color: var(--ink-3); font-size: 12px; }
+
+/* Latest leads: one surface, rows separated by hairlines. */
+.leads { margin-bottom: 8px; }
+.lead-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.lead-list li + li { border-top: 1px solid var(--line); }
+.lead-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 14px 18px; color: inherit; text-decoration: none; transition: background-color .18s var(--ease-out); }
+.lead-row:hover { background: var(--surface-2); }
+.lead-row:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -3px; }
+.lead-mono { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-3); color: var(--ink); font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.lead-main { display: grid; min-width: 0; gap: 3px; }
+.lead-name { overflow: hidden; color: var(--ink); font-size: 14.5px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.lead-signal { overflow: hidden; color: var(--ink-3); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.lead-time { color: var(--ink-3); font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.status-tag.status-finalized { border-color: transparent; background: var(--ok-soft); color: var(--ok); }
+.status-tag.status-needs_review { border-color: transparent; background: var(--highlight-soft); color: var(--highlight-ink); }
+.status-tag.status-rejected { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
+
+@media (max-width: 1100px) {
+    .dash-head { flex-direction: column; align-items: flex-start; }
+    .dash-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+    .dash-head h1 { font-size: 30px; }
+    .dash-actions { width: 100%; }
+    .dash-actions .button { flex: 1; justify-content: center; }
+    .pipeline { grid-template-columns: 1fr 1fr; }
+    .pipeline li + li { border-left: 0; }
+    .pipeline li:nth-child(even) { border-left: 1px solid var(--line); }
+    .pipeline li:nth-child(n + 3) { border-top: 1px solid var(--line); }
+    .pipeline a { padding: 14px 16px 16px; }
+    .pipeline-count { margin-top: 10px; font-size: 34px; }
+    .docket-case { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "no lead go" "no meta go" "no weights go"; }
+    .docket-weights { margin-top: 4px; }
+    .lead-row { grid-template-columns: 36px minmax(0, 1fr) auto; padding: 12px 14px; }
+    .lead-mono { width: 36px; height: 36px; }
+    .lead-time { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .docket-case, .docket-case:hover { transition: none; transform: none; }
+}

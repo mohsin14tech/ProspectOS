@@ -185,8 +185,9 @@ a.chat-source:hover { border-color: currentColor; }
 .chat-msg.is-struck .chat-text { text-decoration: line-through; text-decoration-thickness: 1.5px; color: var(--subtle); }
 .chat-msg.is-struck .chat-clerk { color: var(--court-struck); }
 /* Proven messages get the brand highlighter. */
-.chat-msg.is-admitted .chat-text { background: linear-gradient(transparent 62%, rgba(255, 213, 74, .45) 62%); }
-:root[data-theme="dark"] .chat-msg.is-admitted .chat-text { background: linear-gradient(transparent 62%, rgba(255, 213, 74, .22) 62%); }
+/* The highlighter is drawn per line (inline + box-decoration-break), like a real marker. */
+.chat-msg.is-admitted .chat-hl { background: linear-gradient(transparent 60%, rgba(255, 213, 74, .5) 60%); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+:root[data-theme="dark"] .chat-msg.is-admitted .chat-hl { background: linear-gradient(transparent 60%, rgba(255, 213, 74, .24) 60%); }
 
 .chat-bottom { margin-top: 20px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); }
 .chat-bottom h3 { margin: 0 0 2px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--subtle); }

@@ -1,14 +1,15 @@
 {% extends 'base.html.twig' %}
+{% import 'macros/icons.html.twig' as icons %}
 
 {% block title %}Research workspace{% endblock %}
 {% block breadcrumb %}Research{% endblock %}
 {% block body %}
-<div class="page-heading research-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Research workspace</div><h1>Find your next business opportunity.</h1><p class="page-subtitle">Search the web, inspect a public page, or use synthetic sample records.</p></div></div>
+<div class="page-heading research-heading"><div><h1>Find your next business opportunity.</h1><p class="page-subtitle">Search the web, inspect a public page, or use synthetic sample records.</p></div></div>
 {% for message in app.flashes('success') %}<div class="flash flash-success" role="status"><span>✓</span>{{ message }}</div>{% endfor %}
 {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert"><span>!</span>{{ message }}</div>{% endfor %}
 <div class="research-layout">
     <section class="panel objective-panel" aria-labelledby="objective-title">
-        <div class="panel-heading"><div><h2 id="objective-title">Who are you looking for?</h2><p>Write what you would tell a researcher on your team.</p></div><span class="step-tag">Step 1 of 3</span></div>
+        <div class="panel-heading"><div><h2 id="objective-title">Who are you looking for?</h2><p>Write what you would tell a researcher on your team.</p></div></div>
         <form method="post" action="{{ path('app_research') }}" class="objective-form">
             <input type="hidden" name="_token" value="{{ csrf_token('research_objective') }}">
             <label for="objective">Research objective <span>Required</span></label>
@@ -26,17 +27,14 @@
                 </label>
                 <p class="privacy-note">Search terms are sent to upstream search engines by the search service. Avoid entering personal or confidential information.</p>
             </fieldset>
-            <label for="website_url">Public website URL <span>Optional</span></label>
+            <label for="website_url">Or inspect one website <span>Optional</span></label>
             <input id="website_url" name="website_url" type="url" maxlength="2048" value="{{ lastWebsiteUrl ?? '' }}" placeholder="https://example.com" autocomplete="url">
-            <div class="field-meta"><span>Checks robots.txt first. Only inspect sites whose terms permit automated access; destinations are rechecked.</span><span>HTTP/HTTPS only</span></div>
-            <div class="form-divider"></div>
-            <div class="research-settings"><div><strong>Inspect one page</strong><p>If supplied, the URL is inspected instead of running the selected search source.</p></div><span class="source-state"><span class="status-pip"></span>Optional</span></div>
-            <div class="research-settings"><div><strong>External actions</strong><p>Nothing is sent without your approval.</p></div><span class="lock-mark">⌑</span></div>
-            <button type="submit" class="button button-primary submit-objective">Start research <span aria-hidden="true">→</span></button>
+            <div class="field-meta"><span>If you enter a URL, ProspectOS inspects that one page instead of searching. It checks robots.txt first and only fetches public HTTP/HTTPS pages.</span></div>
+            <div class="research-submit"><button type="submit" class="button button-primary submit-objective">Start research</button><p>Research never emails anyone. Outreach always waits for your approval.</p></div>
         </form>
     </section>
     <aside class="research-aside">
-        <section class="side-info"><span class="info-icon" aria-hidden="true">⌕</span><h2>Review every source</h2><p>Web results are saved with their links and search snippets. Open each source to review what was actually found.</p><ul><li><span>1</span>Search public pages</li><li><span>2</span>Save source evidence</li><li><span>3</span>Review candidates</li></ul></section>
+        <section class="side-info"><span class="info-icon" aria-hidden="true">{{ icons.icon('search', 18) }}</span><h2>Review every source</h2><p>Web results are saved with their links and search snippets. Open each source to review what was actually found.</p><ul><li><span>1</span>Search public pages</li><li><span>2</span>Save source evidence</li><li><span>3</span>Review candidates</li></ul></section>
         <div class="demo-explainer"><span class="demo-badge">Search limits</span><p>This local search service depends on its upstream engines. Results may be incomplete or rate limited. Use the sample source when you need an offline workflow demo.</p></div>
     </aside>
 </div>
