@@ -626,3 +626,12 @@ Release status: still local and uncommitted on main, base cfa4837. No commit/pus
 - YouTube: replaced the description (it was the earlier v3 script, still mentioning "The Advocate answers back" and the cut demo line) with an accurate one including chapter timestamps; "Changes saved" confirmed; the public thumbnail is the new real-hearing thumbnail.
 - Symfony hackathon project: rewrote the description (the old one said "there is deliberately no ruling tool"), added tags Elicitation, MCP Apps, Symfony AI Store; saved with "Update project" and verified after reload; team page shows "Submitted".
 - CI on PR #2 passed after fixing the zero-key step to use `.env.example` (`AI_PROVIDER` was undefined with an empty `.env`). Merge not performed: blocked by the environment's permission check; awaiting the owner.
+
+### Captions and upstream reports — 2026-11-17 (Claude Code session)
+
+- PR #2 merged into `main` (bb0e829) on the owner's go-ahead; `docs/JUDGES.md` link from the YouTube description now resolves (HTTP 200).
+- YouTube (https://youtu.be/LHNodY0Z-YU): set the video language to English (channel default left unchanged) and published a manual English caption track from the film's script (automatic captions had "Prospect OS" / "Symphony AI"); YouTube re-times the text ("processing may take a few hours").
+- Upstream reports filed on symfony/ai after reproducing locally with v1.0.0-BETA1 and checking `main` and existing issues:
+  - https://github.com/symfony/ai/issues/2976 — InMemory hybrid query multiplies cosine distances by `semanticRatio` (orthogonal document reports 0.10 at ratio 0.1); `Retriever` uses that path by default. ProspectOS works around it with `semanticRatio: 1.0`.
+  - https://github.com/symfony/ai/issues/2977 — keep the provider error code on `BadRequestException` (Groq `tool_use_failed` is retryable); ProspectOS currently matches message text.
+- No PHP MCP SDK / mcp-bundle issues found that warranted a report.
