@@ -231,6 +231,24 @@ final class EvidenceCourtTest extends WebTestCase
         self::assertNull(EvidenceCourt::describe($entityManager->getRepository(CourtCase::class)->find($case->getId()))['how_to_rule']);
     }
 
+    public function testCourtListShowsAHearingThatFailedPartway(): void
+    {
+        $client = static::createClient();
+        [$entityManager, $user, , $prospect] = $this->makeCase();
+        $case = static::getContainer()->get(EvidenceCourt::class)->open($prospect, $user);
+        // The Advocate spoke, then the provider failed: the partial transcript has no Skeptic turn.
+        $case->recordProgress(['brief' => [], 'score' => null, 'coverage' => null, 'precedents' => 0, 'advocate' => ['admitted' => 1, 'struck' => 0, 'claims' => [], 'tool_calls' => []]], 'skeptic', 'is reading the file');
+        $case->fail('The AI provider could not complete the hearing (RateLimitExceededException).');
+        $entityManager->flush();
+
+        $client->loginUser($user);
+        $client->request('GET', '/court');
+        self::assertResponseIsSuccessful();
+        $client->request('GET', '/court/'.$case->getId());
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.court-failed', 'could not finish');
+    }
+
     public function testCasesAreInvisibleToOtherWorkspaces(): void
     {
         $client = static::createClient();

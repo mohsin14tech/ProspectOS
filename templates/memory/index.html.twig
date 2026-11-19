@@ -1,10 +1,11 @@
 {% extends 'base.html.twig' %}
+{% import 'macros/icons.html.twig' as icons %}
 
 {% block title %}Prospect memory{% endblock %}
 {% block breadcrumb %}Prospect memory{% endblock %}
 {% block body %}
     <div class="page-heading">
-        <div><div class="eyebrow">Team knowledge</div><h1>Prospect memory</h1><p class="page-subtitle">Reviewed leads and the reasons your team kept or rejected them. New research can use these examples.</p></div>
+        <div><h1>Prospect memory</h1><p class="page-subtitle">Reviewed leads and the reasons your team kept or rejected them. New research can use these examples.</p></div>
     </div>
     {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
     {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
@@ -22,7 +23,7 @@
             <div class="prospect-list">
                 {% for prospect in prospects %}
                     <article class="prospect-row">
-                        <div class="company-avatar avatar-{{ loop.index }}">{{ prospect.name|slice(0, 1)|upper }}</div>
+                        <div class="company-avatar avatar-{{ loop.index }}">{{ prospect.name|monogram }}</div>
                         <div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: prospect.id}) }}">{{ prospect.name }}</a></h3><span class="status-tag">{{ prospect.status|replace({'_': ' '})|title }}</span></div><p>{{ prospect.category }} · {{ prospect.location }}{% if prospect.canonicalDomain %} · {{ prospect.canonicalDomain }}{% endif %}</p></div>
                         <span class="row-time">{{ prospect.updatedAt|date('d M, H:i') }}</span>
                     </article>
@@ -36,7 +37,7 @@
         {% if decisions is empty %}<p class="empty-note">No human decisions have been saved yet.</p>{% else %}
             <ol class="activity-list">
                 {% for item in decisions %}
-                    <li class="activity-item"><span class="timeline-mark mark-research" aria-hidden="true">✓</span><div><strong><a href="{{ path('app_prospect_show', {id: item.prospect.id}) }}">{{ item.prospect.name }}</a> · {{ item.decision|replace({'_': ' '})|title }}</strong><p>{{ item.reason }}</p><time>{{ item.actor.email }} · {{ item.createdAt|date('d M Y, H:i') }}</time></div></li>
+                    <li class="activity-item"><span class="timeline-mark mark-research" aria-hidden="true">{{ icons.icon('check', 13) }}</span><div><strong><a href="{{ path('app_prospect_show', {id: item.prospect.id}) }}">{{ item.prospect.name }}</a> · {{ item.decision|replace({'_': ' '})|title }}</strong><p>{{ item.reason }}</p><time>{{ item.actor.email }} · {{ item.createdAt|date('d M Y, H:i') }}</time></div></li>
                 {% endfor %}
             </ol>
         {% endif %}

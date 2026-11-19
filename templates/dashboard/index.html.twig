@@ -2,74 +2,128 @@
 {% import 'macros/icons.html.twig' as icons %}
 
 {% block title %}Command centre{% endblock %}
+{% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/dashboard.css') }}">{% endblock %}
 {% block body %}
-<div class="page-heading">
-    <div><div class="eyebrow">{{ 'now'|date('l, d F Y') }}</div><h1>Your workspace, in focus.</h1><p class="page-subtitle">Find leads, put them on trial with evidence, and keep what your team decides.</p></div>
-</div>
+<header class="dash-head">
+    <div>
+        <p class="dash-date">{{ 'now'|date('l, j F') }}</p>
+        <h1>
+            {% if awaitingRuling > 0 %}
+                {{ awaitingRuling }} {{ awaitingRuling == 1 ? 'hearing is' : 'hearings are' }} waiting for your ruling.
+            {% elseif prospects is empty %}
+                Start with one lead worth checking.
+            {% else %}
+                Nothing is waiting for your ruling.
+            {% endif %}
+        </h1>
+        <p class="dash-lede">Research a lead, let two AI agents argue it from saved evidence, then decide. Every ruling becomes team memory.</p>
+    </div>
+    <div class="dash-actions">
+        <a class="button button-primary" href="{{ path('app_research') }}">{{ icons.icon('search', 16) }}Start research</a>
+        <a class="button button-secondary" href="{{ path('app_court') }}">{{ icons.icon('scale', 16) }}Evidence Court</a>
+    </div>
+</header>
 
-<ol class="workflow-strip" aria-label="How ProspectOS works">
-    <li><a href="{{ path('app_research') }}"><span class="workflow-step">1</span><span class="workflow-icon">{{ icons.icon('search', 20) }}</span><strong>Research</strong><small>Search the web or inspect a site. Every finding keeps its source.</small></a></li>
-    <li><a href="#prospects"><span class="workflow-step">2</span><span class="workflow-icon">{{ icons.icon('users', 20) }}</span><strong>Review evidence</strong><small>Open a lead to see sources and a deterministic, explainable score.</small></a></li>
-    <li class="workflow-highlight"><a href="{{ path('app_court') }}"><span class="workflow-step">3</span><span class="workflow-icon">{{ icons.icon('scale', 20) }}</span><strong>Evidence Court</strong><small>{% if awaitingRuling > 0 %}{{ awaitingRuling }} {{ awaitingRuling == 1 ? 'hearing awaits' : 'hearings await' }} your ruling.{% else %}AI counsel argue for and against. Uncited claims are struck.{% endif %}</small></a></li>
-    <li><a href="{{ path('app_memory') }}"><span class="workflow-step">4</span><span class="workflow-icon">{{ icons.icon('bookmark', 20) }}</span><strong>Team memory</strong><small>Your rulings become precedent for similar leads.</small></a></li>
+<ol class="pipeline" aria-label="Your pipeline, from research to team memory">
+    <li><a href="{{ path('app_research') }}">
+        <span class="pipeline-step">1</span>
+        <span class="pipeline-name">Research</span>
+        <span class="pipeline-count" data-count-up>{{ pipeline.runs }}</span>
+        <span class="pipeline-note">{{ pipeline.runs == 1 ? 'run' : 'runs' }}, {{ summary.researched }} {{ summary.researched == 1 ? 'lead' : 'leads' }} found</span>
+    </a></li>
+    <li><a href="#prospects">
+        <span class="pipeline-step">2</span>
+        <span class="pipeline-name">Evidence</span>
+        <span class="pipeline-count" data-count-up>{{ pipeline.sources }}</span>
+        <span class="pipeline-note">{{ pipeline.sources == 1 ? 'source' : 'sources' }} saved with a quote</span>
+    </a></li>
+    <li class="{{ awaitingRuling > 0 ? 'is-waiting' : '' }}"><a href="{{ path('app_court') }}">
+        <span class="pipeline-step">3</span>
+        <span class="pipeline-name">Evidence Court</span>
+        <span class="pipeline-count" data-count-up>{{ hearings }}</span>
+        <span class="pipeline-note">{% if awaitingRuling > 0 %}<strong>{{ awaitingRuling }} awaiting your ruling</strong>{% else %}{{ hearings == 1 ? 'hearing' : 'hearings' }} held{% endif %}</span>
+    </a></li>
+    <li><a href="{{ path('app_memory') }}">
+        <span class="pipeline-step">4</span>
+        <span class="pipeline-name">Team memory</span>
+        <span class="pipeline-count" data-count-up>{{ pipeline.rulings }}</span>
+        <span class="pipeline-note">{{ pipeline.rulings == 1 ? 'ruling' : 'rulings' }} the court can cite</span>
+    </a></li>
 </ol>
 
 {% if not aiReady %}
 <section class="ai-callout" role="note">
-    <div><strong>AI is not connected yet.</strong><p>Research and scoring work without it. Evidence Court and AI summaries need one tested model connection.</p></div>
+    <div><strong>AI is not connected yet.</strong><p>Research works without it. Evidence Court and AI summaries need one tested model connection.</p></div>
     <a class="button button-primary" href="{{ path('app_integrations_ai') }}">Connect AI</a>
 </section>
 {% endif %}
 
-<section class="hero-panel" aria-labelledby="research-title">
-    <div class="hero-copy">
-        <span class="hero-kicker">Start with a source</span>
-        <h2 id="research-title">Find the next business worth understanding.</h2>
-        <p>Search public results or inspect a site. Review each source before treating a candidate as a fit.</p>
-        <a class="button button-primary hero-action" href="{{ path('app_research') }}">Start research {{ icons.icon('arrow-up-right', 18) }}</a>
-    </div>
-    <div class="hero-side" aria-label="Local web search details">
-        <div class="hero-side-icon">{{ icons.icon('globe', 22) }}</div>
-        <strong>Local search service</strong>
-        <p>Search uses SearXNG. Upstream engines may limit or omit results.</p>
-        <a href="{{ path('app_integrations') }}">See search setup and limits</a>
-    </div>
-</section>
-
-<section class="summary-section" aria-labelledby="overview-title">
-    <div class="section-heading"><div><h2 id="overview-title">Workspace overview</h2><p>Saved records and research activity</p></div><span class="freshness">{{ 'now'|date('H:i') }} · Local time</span></div>
-    <div class="summary-grid">
-        <article class="summary-card"><div class="summary-label"><span>Saved candidates</span><span class="metric-icon blue">{{ icons.icon('building', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.researched }}</div><div class="metric-foot">Across {{ locations is empty ? 'no saved locations yet' : locations|join(' and ') }}</div></article>
-        <article class="summary-card"><div class="summary-label"><span>Finalized leads</span><span class="metric-icon green">{{ icons.icon('arrow-up-right', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.finalized }}</div><div class="metric-foot">Reviewed examples saved to team memory</div></article>
-        <article class="summary-card"><div class="summary-label"><span>Needs review</span><span class="metric-icon amber">{{ icons.icon('activity', 18) }}</span></div><div class="summary-value" data-count-up>{{ summary.needsReview }}</div><div class="metric-foot">Candidates awaiting a decision</div></article>
-    </div>
-</section>
-
-<div class="content-grid">
-    <section class="panel prospects-panel" id="prospects" aria-labelledby="prospects-title">
-        <div class="panel-heading"><div><h2 id="prospects-title">Latest candidates</h2><p>Recently updated records in this workspace</p></div><a class="text-link" href="{{ path('app_research') }}">Open research</a></div>
-        <div class="prospect-list">
-        {% if prospects is empty %}<div class="empty-state"><span class="empty-state-icon">{{ icons.icon('search', 24) }}</span><h3>No candidates saved yet</h3><p>Start a web search to bring source-linked candidates into this workspace.</p><a class="button button-primary" href="{{ path('app_research') }}">Start a business search</a></div>{% endif %}
-        {% for prospect in prospects %}
-            <article class="prospect-row">
-                <div class="company-avatar avatar-{{ loop.index }}" aria-hidden="true">{{ prospect.initials }}</div>
-                <div class="prospect-main"><div class="prospect-title"><h3><a href="{{ path('app_prospect_show', {id: prospect.id}) }}">{{ prospect.name }}</a></h3><span class="status-tag">{{ prospect.status|replace({'_': ' '})|title }}</span></div><p>{{ prospect.category }} · {{ prospect.location }}{% if prospect.score is not null %} · Score {{ prospect.score }}{% endif %}</p><div class="signal">{{ prospect.signal }}</div></div>
-                <span class="row-time">{{ prospect.updated }}</span>
-            </article>
-        {% endfor %}
+<div class="dash-grid">
+    <section class="docket" aria-labelledby="docket-title">
+        <div class="dash-section-head">
+            <h2 id="docket-title">Awaiting your ruling</h2>
+            <a class="text-link" href="{{ path('app_court') }}">All hearings</a>
         </div>
+        {% if docket is empty %}
+            <div class="docket-empty">
+                <p>No hearing is waiting. Open a lead and put it on trial: the Advocate and the Skeptic argue it in about a minute.</p>
+                <a class="button button-secondary" href="#prospects">Choose a lead</a>
+            </div>
+        {% else %}
+            <ol class="docket-list">
+                {% for case in docket %}
+                    <li>
+                        <a class="docket-case" href="{{ path('app_court_show', {id: case.id}) }}">
+                            <span class="docket-no">#{{ case.id }}</span>
+                            <span class="docket-lead">{{ case.lead }}</span>
+                            <span class="docket-weights" aria-label="{{ case.for }} proven points for, {{ case.against }} against">
+                                <span class="w-for">{{ case.for }} for</span><span class="w-against">{{ case.against }} against</span>
+                            </span>
+                            <span class="docket-meta">Opened {{ case.via == 'mcp' ? 'from an MCP client' : 'in the app' }}, {{ case.opened|date('j M, H:i') }}</span>
+                            <span class="docket-go">Rule {{ icons.icon('chevron-left', 14, 'flip') }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% endif %}
     </section>
 
-    <section class="panel activity-panel" id="activity" aria-labelledby="activity-title">
-        <div class="panel-heading"><div><h2 id="activity-title">Recent activity</h2><p>What happened in your workspace</p></div></div>
+    <section class="activity-panel dash-activity" id="activity" aria-labelledby="activity-title">
+        <div class="dash-section-head"><h2 id="activity-title">Recent research</h2></div>
+        {% if activity is empty %}
+            <p class="dash-muted">No research yet. Your runs will appear here.</p>
+        {% endif %}
         <ol class="activity-list">
         {% for item in activity %}
-            <li class="activity-item"><span class="timeline-mark mark-{{ item.kind }}" aria-hidden="true">{{ item.kind == 'research' ? '⌕' : (item.kind == 'draft' ? '✉' : '↗') }}</span><div><strong>{{ item.title }}</strong><p>{{ item.detail }}</p><time>{{ item.time }}</time></div></li>
+            <li class="activity-item"><span class="timeline-mark mark-{{ item.kind }}" aria-hidden="true">{{ icons.icon('search', 13) }}</span><div><strong>{{ item.title }}</strong><p>{{ item.detail }}</p><time>{{ item.time }}</time></div></li>
         {% endfor %}
         </ol>
-        <div class="activity-note">Research runs and source evidence are saved in this workspace.</div>
     </section>
 </div>
 
-<section class="integration-strip" id="integrations"><div class="integration-icon">{{ icons.icon('plug', 20) }}</div><div><strong>Continue the lead workflow</strong><p>Review team memory, connect AI or prepare a Gmail draft after finalizing a lead.</p></div><a class="button button-secondary" href="{{ path('app_integrations') }}">Open integrations</a></section>
+<section class="leads" id="prospects" aria-labelledby="prospects-title">
+    <div class="dash-section-head">
+        <h2 id="prospects-title">Latest leads</h2>
+        <a class="text-link" href="{{ path('app_memory') }}">All lead records</a>
+    </div>
+    {% if prospects is empty %}
+        <div class="empty-state"><span class="empty-state-icon">{{ icons.icon('search', 24) }}</span><h3>No leads saved yet</h3><p>Start a web search to bring source-linked leads into this workspace.</p><a class="button button-primary" href="{{ path('app_research') }}">Start research</a></div>
+    {% else %}
+        <ul class="lead-list">
+        {% for prospect in prospects %}
+            <li>
+                <a class="lead-row" href="{{ path('app_prospect_show', {id: prospect.id}) }}">
+                    <span class="lead-mono" aria-hidden="true">{{ prospect.initials }}</span>
+                    <span class="lead-main">
+                        <span class="lead-name">{{ prospect.name }}</span>
+                        <span class="lead-signal">{{ prospect.signal }}</span>
+                    </span>
+                    <span class="status-tag status-{{ prospect.status }}">{{ prospect.status|replace({'_': ' '})|capitalize }}</span>
+                    <span class="lead-time">{{ prospect.updated }}</span>
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+</section>
 {% endblock %}

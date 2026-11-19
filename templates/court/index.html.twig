@@ -9,7 +9,7 @@
 {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
 <div class="page-heading">
     <div>
-        <div class="eyebrow"><span class="eyebrow-dot"></span>Decide with evidence, not vibes</div>
+        
         <h1>Evidence Court</h1>
         <p class="page-subtitle">Put a lead on trial before you spend time on it. An AI Advocate and an AI Skeptic argue from your saved sources. A program strikes every claim that lacks a citation. You rule, and your ruling becomes team memory.</p>
     </div>
@@ -60,9 +60,9 @@
             <ul class="court-docket">
                 {% for case in cases %}
                     <li>
-                        <div><a href="{{ path('app_court_show', {id: case.id}) }}"><strong>#{{ case.id }} · {{ case.prospect.name }}</strong></a>
-                            <small>{{ {pending: 'Hearing in progress', argued: 'Awaiting ruling', ruled: 'Ruled', failed: 'Failed'}[case.status] }}{% if case.transcript.advocate is defined %} · {{ case.transcript.advocate.admitted }}–{{ case.transcript.skeptic.admitted }} admitted{% endif %} · {{ case.openedVia == 'mcp' ? 'via MCP' : 'in app' }} · {{ case.createdAt|date('d M, H:i') }}</small></div>
-                        <span class="status-tag court-status court-status-{{ case.status }}">{{ case.status|title }}</span>
+                        <div><a href="{{ path('app_court_show', {id: case.id}) }}"><strong>#{{ case.id }} {{ case.prospect.name }}</strong></a>
+                            <small>{% if case.transcript.advocate is defined and case.transcript.skeptic is defined %}{{ case.transcript.advocate.admitted }} for, {{ case.transcript.skeptic.admitted }} against. {% endif %}Opened {{ case.openedVia == 'mcp' ? 'from an MCP client' : 'in the app' }}, {{ case.createdAt|date('j M, H:i') }}</small></div>
+                        <span class="status-tag court-status court-status-{{ case.status }}">{{ {pending: 'In progress', argued: 'Awaiting ruling', ruled: 'Ruled', failed: 'Failed'}[case.status] }}</span>
                     </li>
                 {% endfor %}
             </ul>

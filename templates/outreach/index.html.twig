@@ -3,7 +3,7 @@
 {% block breadcrumb %}Email outreach{% endblock %}
 {% block stylesheets %}<link rel="stylesheet" href="{{ asset('styles/mail.css') }}">{% endblock %}
 {% block body %}
-    <div class="page-heading"><div><div class="eyebrow">Workspace email</div><h1>Email connections</h1><p class="page-subtitle">Connect Gmail or an IMAP/SMTP mailbox to read recent mail and prepare your next reply.</p></div><a class="button button-primary" href="{{ path('app_inbox') }}">Open inbox</a></div>
+    <div class="page-heading"><div><h1>Email connections</h1><p class="page-subtitle">Connect Gmail or an IMAP/SMTP mailbox to read recent mail and prepare your next reply.</p></div><a class="button button-primary" href="{{ path('app_inbox') }}">Open inbox</a></div>
     {% for message in app.flashes('success') %}<div class="flash flash-success" role="status">{{ message }}</div>{% endfor %}
     {% for message in app.flashes('error') %}<div class="flash flash-error" role="alert">{{ message }}</div>{% endfor %}
 

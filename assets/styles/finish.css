@@ -1,0 +1,71 @@
+/* Final polish layer (loaded last). Structural fixes shared by every page. */
+
+/* Stacked sections never touch. Block margins collapse, so a heading's own bottom margin still wins. */
+:root[data-theme] .page-content > :where(.panel, section, .summary-grid, .integration-grid, form) + :where(.panel, section, .summary-grid, .integration-grid, form) { margin-top: 20px; }
+:root[data-theme] .page-content > .flash + :where(.panel, section) { margin-top: 16px; }
+
+/* Panel body copy sits below its heading in the hierarchy. */
+:root[data-theme] .panel > p { margin: 10px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+:root[data-theme] .panel-heading h2 { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+/* Form controls: one consistent size, readable padding, and a clear focus ring. */
+:root[data-theme] .page-content :is(select, textarea, input:is([type="text"], [type="email"], [type="url"], [type="password"], [type="search"], :not([type]))) {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.45;
+}
+:root[data-theme] .page-content textarea { min-height: 96px; resize: vertical; }
+:root[data-theme] .page-content select { padding-right: 36px; cursor: pointer; }
+:root[data-theme] .page-content :is(input, select, textarea)::placeholder { color: var(--ink-3); opacity: 1; }
+
+/* Buttons keep their natural width unless a layout asks otherwise. */
+:root[data-theme] .page-content .auth-form .button { justify-self: start; min-width: 160px; }
+
+/* The workspace switcher already sits at the top of the sidebar; the top bar repeats it only where the sidebar is hidden. */
+@media (min-width: 861px) {
+    :root[data-theme] .topbar .demo-pill { display: none; }
+}
+
+/* Keyboard focus is always visible. */
+:root[data-theme] :is(a, button, summary, [tabindex]):focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+
+/* Panel subtitles stay readable. */
+:root[data-theme] .panel-heading p { font-size: 13px; line-height: 1.5; }
+
+/* Prospect report */
+:root[data-theme] .report-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+:root[data-theme] .report-tags .status-tag { min-height: 0; }
+:root[data-theme] .score-unrated { padding: 0; background: none; color: var(--ink); font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+:root[data-theme] .decision-history-title { margin: 26px 0 8px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink); font-size: 14px; font-weight: 650; }
+:root[data-theme] .page-content .auth-form .button { width: auto; }
+
+/* Court list: status colours carry meaning (yellow = waiting for you). */
+:root[data-theme] .status-tag.court-status-argued { border-color: transparent; background: var(--highlight-soft); color: var(--highlight-ink); }
+:root[data-theme] .status-tag.court-status-ruled { border-color: transparent; background: var(--ok-soft); color: var(--ok); }
+:root[data-theme] .status-tag.court-status-failed { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
+:root[data-theme] .status-tag.court-status-pending { border-color: transparent; background: var(--accent-soft); color: var(--accent-color); }
+
+/* Research form */
+:root[data-theme] .source-option > span { flex: 1; text-align: left; }
+:root[data-theme] .objective-form #website_url { width: 100%; max-width: none; }
+:root[data-theme] .research-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 22px; }
+:root[data-theme] .research-submit .button { width: auto; min-width: 180px; }
+:root[data-theme] .research-submit p { margin: 0; color: var(--ink-3); font-size: 13px; }
+
+/* AI settings: saved-connection details were coloured with --muted, which premium.css turned into a background tone. */
+:root[data-theme] .ai-connection-copy span { color: var(--ink-3); font-size: 13.5px; }
+/* The progress strip already shows the three steps; the repeated "Step n / 3" labels and the big "02" were noise. */
+:root[data-theme] .ai-step-label, :root[data-theme] .ai-verify-number { display: none; }
+:root[data-theme] .ai-config-topline h2, :root[data-theme] .ai-verify-panel h2 { margin-top: 0; font-family: var(--font-display); }
+:root[data-theme] .ai-field-group { width: 100%; }
+:root[data-theme] .ai-field-group :is(input, select) { width: 100%; max-width: none; }
+:root[data-theme] .ai-form-grid { grid-template-columns: minmax(0, 1fr); }
+
+/* Phones: count tiles sit side by side instead of three tall cards. */
+@media (max-width: 760px) {
+    :root[data-theme] .page-content > .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    :root[data-theme] .page-content > .summary-grid .summary-card { min-height: 0; padding: 12px; }
+    :root[data-theme] .page-content > .summary-grid .summary-value { margin-top: 6px; font-size: 28px; }
+    :root[data-theme] .page-content > .summary-grid :is(.metric-foot, .summary-card > p) { display: none; }
+}

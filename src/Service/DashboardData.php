@@ -32,8 +32,7 @@ final class DashboardData
                 ['workspace' => $workspace, 'prospect' => $prospect],
                 ['retrievedAt' => 'DESC'],
             );
-            $words = preg_split('/\s+/', trim($prospect->getName())) ?: [];
-            $initials = implode('', array_map(static fn (string $word): string => mb_strtoupper(mb_substr($word, 0, 1)), array_slice($words, 0, 2)));
+            $initials = \App\Twig\MonogramExtension::monogram($prospect->getName());
 
             $rows[] = [
                 'id' => $prospect->getId(),
